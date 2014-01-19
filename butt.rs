@@ -10,6 +10,9 @@ fn main() {
     let y = parse(tokenize("'z'"));
     println!("{}", y);
 
+    let z = parse(tokenize("\"friends\""));
+    println!("{}", z);
+
     println!("uhhhhhh {}", BVector(~[BPair( ~Cons(BNumber(3.14159), ~Nil) ), 
                                      BChar('z'), BBoolean(true)]));
 
@@ -89,7 +92,11 @@ fn parse(expr: Expression) -> Result<BValue, ~str> {
                         None    =>
                             match parse_num(x) {
                                Some(n) => Ok( BNumber(n) ),
-                               None    => Ok( BSymbol(x) )
+                               None    => 
+                                   match parse_string(x) {
+                                       Some(s) => Ok( BString(s) ),
+                                       None    => Ok( BSymbol(x) )
+                                   }
                             }
                     }
             }
@@ -122,4 +129,12 @@ fn parse_char(s: &str) -> Option<char> {
     }
 }
 
+fn parse_string(s: &str) -> Option<~str> {
+    let len = s.char_len();
+    if len > 1 && s.char_at(0) == '"' && s.char_at(len - 1) == '"' {
+        Some(s.slice(1, len - 1).to_owned())
+    } else {
+        None
+    }
+    
 }
