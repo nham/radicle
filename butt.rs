@@ -64,8 +64,32 @@ impl fmt::Default for ~[~BValue] {
 fn eval(expr: Expression) -> Result<BValue, ~str> {
     match expr {
         Leaf(x) => {
-            Ok(BSymbol(x))
+            if is_num(x) {
+                //Ok(BNumber(x))
+                Ok(BNumber(0.0))
+            } else {
+                Ok(BSymbol(x))
+            }
         },
         _       => Err(~"not implemented")
     }
+}
+
+
+fn is_num(s: &str) -> bool {
+    for c in s.chars() {
+        if c < '0' || c > '9' {
+            return false;
+        }
+    }
+
+    true
+}
+
+#[test]
+fn test_is_num() {
+    assert!(is_num("9"));
+    assert!(is_num("0"));
+    assert!(is_num("458915"));
+    assert!(is_num("0000009999"));
 }
