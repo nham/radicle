@@ -1,8 +1,10 @@
 use std::fmt;
 use std::from_str::from_str;
+use std::str;
+use std::option;
 
 fn main() {
-    let x = eval( Leaf(~"5") );
+    let x = eval( Leaf(~"-3.14159") );
     println!("{}", x);
 
     println!("uhhhhhh {}", BVector(~[~BNil, ~BChar('z'), ~BBoolean(true)]));
@@ -59,14 +61,12 @@ impl fmt::Default for ~[~BValue] {
 fn eval(expr: Expression) -> Result<BValue, ~str> {
     match expr {
         Leaf(x) => {
-            if is_num(x) {
-                //Ok(BNumber(x))
-                match from_str::<f64>(x) {
-                    Some(x) => Ok( BNumber(x) ),
-                    None    => Err(~"I thought it was a number, but it's not?")
-                }
-            } else {
-                Ok( BSymbol(x) )
+            match parse_bool(x) {
+                Some(b) => Ok( BBoolean(b) ),
+                None    => match parse_num(x) {
+                               Some(n) => Ok( BNumber(n) ),
+                               None    => Ok( BSymbol(x) )
+                           }
             }
         },
         _       => Err(~"not implemented")
@@ -74,14 +74,18 @@ fn eval(expr: Expression) -> Result<BValue, ~str> {
 }
 
 
-fn is_num(s: &str) -> bool {
-    for c in s.chars() {
-        if c < '0' || c > '9' {
-            return false;
-        }
+fn parse_bool(s: &str) -> option::Option<bool> {
+    if str::eq_slice(s, "#t") {
+        Some(true)
+    } else if str::eq_slice(s, "#f") {
+        Some(false)
+    } else {
+        None
     }
+}
 
-    true
+fn parse_num(s: &str) -> option::Option<f64> {
+    from_str::<f64>(s)
 }
 
 #[test]
