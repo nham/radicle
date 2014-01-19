@@ -54,7 +54,7 @@ impl Default for BValue {
             BSymbol(ref s) => write!(f.buf, "BSymbol({})", *s),
             BChar(c)       => write!(f.buf, "BChar({})", c),
             BNumber(n)     => write!(f.buf, "BNumber({})", n),
-            BString(ref s) => write!(f.buf, "BNumber({})", *s),
+            BString(ref s) => write!(f.buf, "BString({})", *s),
             BVector(ref v) => write!(f.buf, "BVector({})", *v),
             BPair(ref p) => write!(f.buf, "BPair({})", **p)
         }
