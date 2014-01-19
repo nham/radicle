@@ -2,10 +2,15 @@ use std::fmt::{Default, Formatter};
 use std::from_str::from_str;
 use std::str::{eq_slice};
 use std::option::{Option};
+use std::hashmap::HashMap;
 
 fn main() {
-    let x = parse("-3.14159");
-    println!("{}", x);
+    let mut env: Environment = HashMap::new();
+
+    match parse("-3.14159") {
+        Ok(expr) => println!("{}", eval(expr, env)),
+        Err(s)   => println!("{}", s)
+    }
 
     let y = parse("'z'");
     println!("{}", y);
@@ -13,10 +18,10 @@ fn main() {
     let z = parse("\"friends\"");
     println!("{}", z);
 
-    let a = tokenize("(5");
+    let a = parse("(5");
     println!("{}", a);
 
-    let b = tokenize("(5 7)");
+    let b = parse("(5 7)");
     println!("{}", b);
 
     println!("uhhhhhh {}", BVector(~[BPair( ~Cons(BNumber(3.14159), ~Nil) ), 
@@ -105,7 +110,11 @@ impl Default for ~[BValue] {
     }
 }
 
-fn tokenize(s: &str) -> Result<Expression, ~str> {
+
+type Environment = HashMap<~str, BValue>;
+
+
+fn parse(s: &str) -> Result<Expression, ~str> {
     let s1 = s.replace("(", "( ").replace(")", " )");
     let tokens: ~[&str] = s1.split(' ').collect();
     if !eq_slice(tokens[0], "(") {
@@ -128,40 +137,36 @@ fn tokenize(s: &str) -> Result<Expression, ~str> {
     }
 }
 
-fn parse(s: &str) -> Result<BValue, ~str> {
-    match tokenize(s) {
-        Err(s) => Err(s),
-        Ok(expr) =>
-            match expr {
-                Leaf(x) => {
-                    match parse_bool(x) {
-                        Some(b) => Ok( BBoolean(b) ),
-                        None    => 
-                    match parse_char(x) {
-                        Some(c) => Ok( BChar(c) ),
-                        None    =>
-                    match parse_num(x) {
-                        Some(n) => Ok( BNumber(n) ),
-                        None    => 
-                    match parse_string(x) {
-                        Some(s) => Ok( BString(s) ),
-                        None    => Ok( BSymbol(x) )
-                    }
-                    }
-                    }
-                    }
-                },
-                Node(_) => Err(~"not implemented")
+fn eval(expr: Expression, env: Environment) -> Result<BValue, ~str> {
+    match expr {
+        Leaf(x) => {
+            match eval_bool(x) {
+                Some(b) => Ok( BBoolean(b) ),
+                None    => 
+            match eval_char(x) {
+                Some(c) => Ok( BChar(c) ),
+                None    =>
+            match eval_num(x) {
+                Some(n) => Ok( BNumber(n) ),
+                None    => 
+            match eval_string(x) {
+                Some(s) => Ok( BString(s) ),
+                None    => 
+            match eval_symbol(x, env) {
+               Some(v) => Ok( v ),
+               None    => Err(~"Can't figure it out, man")
             }
+            }
+            }
+            }
+            }
+        },
+        Node(_) => Err(~"not implemented")
     }
 }
 
-fn eval(val: BValue) -> ~str {
-    fail!("Unimplemented");
-}
 
-
-fn parse_bool(s: &str) -> Option<bool> {
+fn eval_bool(s: &str) -> Option<bool> {
     if eq_slice(s, "#t") {
         Some(true)
     } else if eq_slice(s, "#f") {
@@ -171,11 +176,11 @@ fn parse_bool(s: &str) -> Option<bool> {
     }
 }
 
-fn parse_num(s: &str) -> Option<f64> {
+fn eval_num(s: &str) -> Option<f64> {
     from_str::<f64>(s)
 }
 
-fn parse_char(s: &str) -> Option<char> {
+fn eval_char(s: &str) -> Option<char> {
     let x: ~[char] = s.chars().collect();
     if x.len() == 3 && x[0] == '\'' && x[2] == '\'' {
         Some(x[1])
@@ -184,7 +189,7 @@ fn parse_char(s: &str) -> Option<char> {
     }
 }
 
-fn parse_string(s: &str) -> Option<~str> {
+fn eval_string(s: &str) -> Option<~str> {
     let len = s.char_len();
     if len > 1 && s.char_at(0) == '"' && s.char_at(len - 1) == '"' {
         Some(s.slice(1, len - 1).to_owned())
@@ -192,4 +197,10 @@ fn parse_string(s: &str) -> Option<~str> {
         None
     }
     
+}
+
+fn eval_symbol(s: &str, env: Environment) -> Option<BValue> {
+    //println!("{}", env);
+    // env.find
+    Some(BSymbol(s.to_owned()))
 }
