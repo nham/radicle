@@ -4,14 +4,20 @@ use std::str::{eq_slice};
 use std::option::{Option};
 
 fn main() {
-    let x = parse(tokenize("-3.14159"));
+    let x = parse("-3.14159");
     println!("{}", x);
 
-    let y = parse(tokenize("'z'"));
+    let y = parse("'z'");
     println!("{}", y);
 
-    let z = parse(tokenize("\"friends\""));
+    let z = parse("\"friends\"");
     println!("{}", z);
+
+    let a = tokenize("(5");
+    println!("{}", a);
+
+    let b = tokenize("(5 7)");
+    println!("{}", b);
 
     println!("uhhhhhh {}", BVector(~[BPair( ~Cons(BNumber(3.14159), ~Nil) ), 
                                      BChar('z'), BBoolean(true)]));
@@ -21,6 +27,28 @@ fn main() {
 enum Expression {
     Leaf(~str),
     Node(~[Expression])
+}
+
+impl Default for ~[Expression] {
+    fn fmt(v: &~[Expression], f: &mut Formatter) {
+        write!(f.buf, "[");
+
+        for x in v.iter() {
+            write!(f.buf, " {}", *x);
+
+        }
+
+        write!(f.buf, " ]");
+    }
+}
+
+impl Default for Expression {
+    fn fmt(v: &Expression, f: &mut Formatter) {
+        match *v {
+            Node(ref vec) => write!(f.buf, "Node({})", *vec),
+            Leaf(ref val) => write!(f.buf, "Leaf({})", *val)
+        }
+    }
 }
 
 // inspired by 3.4, disjointness of types
@@ -77,32 +105,59 @@ impl Default for ~[BValue] {
     }
 }
 
-fn tokenize(s: &str) -> Expression {
-    Leaf(s.to_owned())
+fn tokenize(s: &str) -> Result<Expression, ~str> {
+    let s1 = s.replace("(", "( ").replace(")", " )");
+    let tokens: ~[&str] = s1.split(' ').collect();
+    if !eq_slice(tokens[0], "(") {
+        Ok( Leaf(tokens[0].to_owned()) )
+    } else {
+        // This doesnt tokenize nested lists yet
+        if !eq_slice(tokens[tokens.len() - 1], ")") {
+            return Err(~"Mismatched parentheses");
+        }
+
+        let mut i = 1;
+        let mut toks: ~[Expression] = ~[];
+
+        while !eq_slice(tokens[i], ")") && i < tokens.len() {
+            toks.push( Leaf(tokens[i].to_owned()) );
+            i += 1;
+        }
+
+        return Ok( Node(toks) );
+    }
 }
 
-fn parse(expr: Expression) -> Result<BValue, ~str> {
-    match expr {
-        Leaf(x) => {
-            match parse_bool(x) {
-                Some(b) => Ok( BBoolean(b) ),
-                None    => 
+fn parse(s: &str) -> Result<BValue, ~str> {
+    match tokenize(s) {
+        Err(s) => Err(s),
+        Ok(expr) =>
+            match expr {
+                Leaf(x) => {
+                    match parse_bool(x) {
+                        Some(b) => Ok( BBoolean(b) ),
+                        None    => 
                     match parse_char(x) {
                         Some(c) => Ok( BChar(c) ),
                         None    =>
-                            match parse_num(x) {
-                               Some(n) => Ok( BNumber(n) ),
-                               None    => 
-                                   match parse_string(x) {
-                                       Some(s) => Ok( BString(s) ),
-                                       None    => Ok( BSymbol(x) )
-                                   }
-                            }
+                    match parse_num(x) {
+                        Some(n) => Ok( BNumber(n) ),
+                        None    => 
+                    match parse_string(x) {
+                        Some(s) => Ok( BString(s) ),
+                        None    => Ok( BSymbol(x) )
                     }
+                    }
+                    }
+                    }
+                },
+                Node(_) => Err(~"not implemented")
             }
-        },
-        _       => Err(~"not implemented")
     }
+}
+
+fn eval(val: BValue) -> ~str {
+    fail!("Unimplemented");
 }
 
 
