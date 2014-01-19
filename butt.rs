@@ -3,20 +3,36 @@ use std::from_str::from_str;
 use std::str::{eq_slice};
 use std::option::{Option};
 use std::hashmap::HashMap;
+use std::clone::Clone;
 
 fn main() {
     let mut env: Environment = HashMap::new();
+    env.insert(~"x", BNumber(17f64));
 
-    match parse("-3.14159") {
-        Ok(expr) => println!("{}", eval(expr, env)),
+    let mut inp = "-3.14159";
+    match parse(inp) {
+        Ok(expr) => println!("input: {}, eval: {}", inp, eval(expr, &env)),
         Err(s)   => println!("{}", s)
     }
 
-    let y = parse("'z'");
-    println!("{}", y);
+    inp = "x";
+    match parse(inp) {
+        Ok(expr) => println!("input: {}, eval: {}", inp, eval(expr, &env)),
+        Err(s)   => println!("{}", s)
+    }
 
-    let z = parse("\"friends\"");
-    println!("{}", z);
+    inp = "'z'";
+    match parse(inp) {
+        Ok(expr) => println!("input: {}, eval: {}", inp, eval(expr, &env)),
+        Err(s)   => println!("{}", s)
+    }
+
+    inp = "\"friends\"";
+    match parse(inp) {
+        Ok(expr) => println!("input: {}, eval: {}", inp, eval(expr, &env)),
+        Err(s)   => println!("{}", s)
+    }
+
 
     let a = parse("(5");
     println!("{}", a);
@@ -24,7 +40,7 @@ fn main() {
     let b = parse("(5 7)");
     println!("{}", b);
 
-    println!("uhhhhhh {}", BVector(~[BPair( ~Cons(BNumber(3.14159), ~Nil) ), 
+    println!("{}", BVector(~[BPair( ~Cons(BNumber(3.14159), ~Nil) ), 
                                      BChar('z'), BBoolean(true)]));
 
 }
@@ -58,6 +74,7 @@ impl Default for Expression {
 
 // inspired by 3.4, disjointness of types
 // see also 6.3 for discussion of the empty list, called BNil here
+#[deriving(Clone)]
 enum BValue {
     BBoolean(bool),
     BSymbol(~str),
@@ -69,6 +86,7 @@ enum BValue {
     BPair(~List<BValue>),
 }
 
+#[deriving(Clone)]
 enum List<T> {
     Cons(T, ~List<T>),
     Nil
@@ -82,6 +100,7 @@ impl<T: Default> Default for List<T> {
         }
     }
 }
+
 
 impl Default for BValue {
     fn fmt(v: &BValue, f: &mut Formatter) {
@@ -137,7 +156,7 @@ fn parse(s: &str) -> Result<Expression, ~str> {
     }
 }
 
-fn eval(expr: Expression, env: Environment) -> Result<BValue, ~str> {
+fn eval(expr: Expression, env: &Environment) -> Result<BValue, ~str> {
     match expr {
         Leaf(x) => {
             match eval_bool(x) {
@@ -199,8 +218,12 @@ fn eval_string(s: &str) -> Option<~str> {
     
 }
 
-fn eval_symbol(s: &str, env: Environment) -> Option<BValue> {
+fn eval_symbol(s: &str, env: &Environment) -> Option<BValue> {
     //println!("{}", env);
     // env.find
-    Some(BSymbol(s.to_owned()))
+    let key = &s.to_owned();
+    match env.find_copy(key) {
+        Some(x) => Some(x),
+        None     => Some(BSymbol(s.to_owned()))
+    }
 }
