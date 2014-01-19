@@ -116,13 +116,6 @@ fn parse_char(s: &str) -> Option<char> {
     } else {
         None
     }
-
 }
 
-#[test]
-fn test_is_num() {
-    assert!(is_num("9"));
-    assert!(is_num("0"));
-    assert!(is_num("458915"));
-    assert!(is_num("0000009999"));
 }
