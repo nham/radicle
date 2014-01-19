@@ -45,6 +45,7 @@ fn main() {
 
 }
 
+#[deriving(Clone)]
 enum Expression {
     Leaf(~str),
     Node(~[Expression])
@@ -82,8 +83,15 @@ enum BValue {
     BNumber(f64),
     BString(~str),
     BVector(~[BValue]),
-    //BProcedure
     BPair(~List<BValue>),
+    BProcedure(BProcedure),
+}
+
+#[deriving(Clone)]
+struct BProcedure {
+    args: ~[~str],
+    body: Expression,
+    env: Environment
 }
 
 #[deriving(Clone)]
@@ -111,7 +119,8 @@ impl Default for BValue {
             BNumber(n)     => write!(f.buf, "BNumber({})", n),
             BString(ref s) => write!(f.buf, "BString({})", *s),
             BVector(ref v) => write!(f.buf, "BVector({})", *v),
-            BPair(ref p) => write!(f.buf, "BPair({})", **p)
+            BPair(ref p) => write!(f.buf, "BPair({})", **p),
+            BProcedure(_) => write!(f.buf, "BProcedure()")
         }
     }
 }
