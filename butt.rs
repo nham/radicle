@@ -1,4 +1,5 @@
 use std::fmt;
+use std::from_str::from_str;
 
 fn main() {
     let x = eval( Leaf(~"5") );
@@ -60,9 +61,12 @@ fn eval(expr: Expression) -> Result<BValue, ~str> {
         Leaf(x) => {
             if is_num(x) {
                 //Ok(BNumber(x))
-                Ok(BNumber(0.0))
+                match from_str::<f64>(x) {
+                    Some(x) => Ok( BNumber(x) ),
+                    None    => Err(~"I thought it was a number, but it's not?")
+                }
             } else {
-                Ok(BSymbol(x))
+                Ok( BSymbol(x) )
             }
         },
         _       => Err(~"not implemented")
