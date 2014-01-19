@@ -4,12 +4,6 @@ fn main() {
     let x = eval( Leaf(~"5") );
     println!("{}", x);
 
-    let y: ~[int] = ~[1, 5, 19, -21];
-
-    for &x in y.iter() {
-        println!("hahahah {}", x);
-    }
-
     println!("uhhhhhh {}", BVector(~[~BNil, ~BChar('z'), ~BBoolean(true)]));
 
 }
