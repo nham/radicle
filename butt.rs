@@ -1,13 +1,16 @@
-use std::fmt;
+use std::fmt::{Default, Formatter};
 use std::from_str::from_str;
-use std::str;
-use std::option;
+use std::str::{eq_slice};
+use std::option::{Option};
 
 fn main() {
     let x = eval( Leaf(~"-3.14159") );
     println!("{}", x);
 
-    println!("uhhhhhh {}", BVector(~[~BNil, ~BChar('z'), ~BBoolean(true)]));
+    let y = eval( Leaf(~"'z'") );
+    println!("{}", y);
+
+    println!("uhhhhhh {}", BVector(~[~BPair(~Nil), ~BChar('z'), ~BBoolean(true)]));
 
 }
 
@@ -26,12 +29,25 @@ enum BValue {
     BString(~str),
     BVector(~[~BValue]),
     //BProcedure
-    BCons(~BValue, ~BValue),
-    BNil
+    BPair(~List<BValue>),
 }
 
-impl fmt::Default for BValue {
-    fn fmt(v: &BValue, f: &mut fmt::Formatter) {
+enum List<T> {
+    Cons(T, ~List<T>),
+    Nil
+}
+
+impl<T: Default> Default for List<T> {
+    fn fmt(v: &List<T>, f: &mut Formatter) {
+        match *v {
+            Cons(ref v, ref l) => write!(f.buf, "({}, {})", *v, **l),
+            Nil => write!(f.buf, "()")
+        }
+    }
+}
+
+impl Default for BValue {
+    fn fmt(v: &BValue, f: &mut Formatter) {
         match *v {
             BBoolean(b)    => write!(f.buf, "BBoolean({})", b),
             BSymbol(ref s) => write!(f.buf, "BSymbol({})", *s),
@@ -39,14 +55,13 @@ impl fmt::Default for BValue {
             BNumber(n)     => write!(f.buf, "BNumber({})", n),
             BString(ref s) => write!(f.buf, "BNumber({})", *s),
             BVector(ref v) => write!(f.buf, "BVector({})", *v),
-            BCons(ref v1, ref v2) => write!(f.buf, "BCons({}, {})", **v1, **v2),
-            BNil => write!(f.buf, "()")
+            BPair(ref p) => write!(f.buf, "BPair({})", **p)
         }
     }
 }
 
-impl fmt::Default for ~[~BValue] {
-    fn fmt(v: &~[~BValue], f: &mut fmt::Formatter) {
+impl Default for ~[~BValue] {
+    fn fmt(v: &~[~BValue], f: &mut Formatter) {
         write!(f.buf, "[");
 
         for &ref x in v.iter() {
@@ -63,10 +78,15 @@ fn eval(expr: Expression) -> Result<BValue, ~str> {
         Leaf(x) => {
             match parse_bool(x) {
                 Some(b) => Ok( BBoolean(b) ),
-                None    => match parse_num(x) {
+                None    => 
+                    match parse_char(x) {
+                        Some(c) => Ok( BChar(c) ),
+                        None    =>
+                            match parse_num(x) {
                                Some(n) => Ok( BNumber(n) ),
                                None    => Ok( BSymbol(x) )
-                           }
+                            }
+                    }
             }
         },
         _       => Err(~"not implemented")
@@ -74,18 +94,28 @@ fn eval(expr: Expression) -> Result<BValue, ~str> {
 }
 
 
-fn parse_bool(s: &str) -> option::Option<bool> {
-    if str::eq_slice(s, "#t") {
+fn parse_bool(s: &str) -> Option<bool> {
+    if eq_slice(s, "#t") {
         Some(true)
-    } else if str::eq_slice(s, "#f") {
+    } else if eq_slice(s, "#f") {
         Some(false)
     } else {
         None
     }
 }
 
-fn parse_num(s: &str) -> option::Option<f64> {
+fn parse_num(s: &str) -> Option<f64> {
     from_str::<f64>(s)
+}
+
+fn parse_char(s: &str) -> Option<char> {
+    let x: ~[char] = s.chars().collect();
+    if x.len() == 3 && x[0] == '\'' && x[2] == '\'' {
+        Some(x[1])
+    } else {
+        None
+    }
+
 }
 
 #[test]
