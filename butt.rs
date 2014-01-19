@@ -10,7 +10,8 @@ fn main() {
     let y = eval( Leaf(~"'z'") );
     println!("{}", y);
 
-    println!("uhhhhhh {}", BVector(~[~BPair(~Nil), ~BChar('z'), ~BBoolean(true)]));
+    println!("uhhhhhh {}", BVector(~[BPair( ~Cons(BNumber(3.14159), ~Nil) ), 
+                                     BChar('z'), BBoolean(true)]));
 
 }
 
@@ -27,7 +28,7 @@ enum BValue {
     BChar(char),
     BNumber(f64),
     BString(~str),
-    BVector(~[~BValue]),
+    BVector(~[BValue]),
     //BProcedure
     BPair(~List<BValue>),
 }
@@ -40,7 +41,7 @@ enum List<T> {
 impl<T: Default> Default for List<T> {
     fn fmt(v: &List<T>, f: &mut Formatter) {
         match *v {
-            Cons(ref v, ref l) => write!(f.buf, "({}, {})", *v, **l),
+            Cons(ref v, ref l) => write!(f.buf, "({} : {})", *v, **l),
             Nil => write!(f.buf, "()")
         }
     }
@@ -60,12 +61,12 @@ impl Default for BValue {
     }
 }
 
-impl Default for ~[~BValue] {
-    fn fmt(v: &~[~BValue], f: &mut Formatter) {
+impl Default for ~[BValue] {
+    fn fmt(v: &~[BValue], f: &mut Formatter) {
         write!(f.buf, "[");
 
-        for &ref x in v.iter() {
-            write!(f.buf, " {}", **x);
+        for x in v.iter() {
+            write!(f.buf, " {}", *x);
 
         }
 
