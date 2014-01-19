@@ -4,10 +4,10 @@ use std::str::{eq_slice};
 use std::option::{Option};
 
 fn main() {
-    let x = eval( Leaf(~"-3.14159") );
+    let x = parse(tokenize("-3.14159"));
     println!("{}", x);
 
-    let y = eval( Leaf(~"'z'") );
+    let y = parse(tokenize("'z'"));
     println!("{}", y);
 
     println!("uhhhhhh {}", BVector(~[BPair( ~Cons(BNumber(3.14159), ~Nil) ), 
@@ -17,7 +17,7 @@ fn main() {
 
 enum Expression {
     Leaf(~str),
-    Node(~[~Expression])
+    Node(~[Expression])
 }
 
 // inspired by 3.4, disjointness of types
@@ -74,7 +74,11 @@ impl Default for ~[BValue] {
     }
 }
 
-fn eval(expr: Expression) -> Result<BValue, ~str> {
+fn tokenize(s: &str) -> Expression {
+    Leaf(s.to_owned())
+}
+
+fn parse(expr: Expression) -> Result<BValue, ~str> {
     match expr {
         Leaf(x) => {
             match parse_bool(x) {
