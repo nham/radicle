@@ -10,84 +10,20 @@ fn main() {
     let mut env: Environment = HashMap::new();
     env.insert(~"x", BNumber(17f64));
 
-    let mut inp = "-3.14159";
-    match parse(inp) {
-        Ok(expr) => println!("input: {}, eval: {}", inp, eval(&expr, &env)),
-        Err(s)   => println!("{}", s)
-    }
+    parse_eval("-3.14159", &env);
 
-    inp = "x";
-    match parse(inp) {
-        Ok(expr) => println!("input: {}, eval: {}", inp, eval(&expr, &env)),
-        Err(s)   => println!("{}", s)
-    }
-
-    inp = "'z'";
-    match parse(inp) {
-        Ok(expr) => println!("input: {}, eval: {}", inp, eval(&expr, &env)),
-        Err(s)   => println!("{}", s)
-    }
-
-    inp = "\"friends\"";
-    match parse(inp) {
-        Ok(expr) => println!("input: {}, eval: {}", inp, eval(&expr, &env)),
-        Err(s)   => println!("{}", s)
-    }
-
-    inp = "()";
-    match parse(inp) {
-        Ok(expr) => println!("input: {}, eval: {}", inp, eval(&expr, &env)),
-        Err(s)   => println!("{}", s)
-    }
-
-    inp = "(+ 1 1)";
-    match parse(inp) {
-        Ok(expr) => println!("input: {}, eval: {}", inp, eval(&expr, &env)),
-        Err(s)   => println!("{}", s)
-    }
-
-    inp = "(+ 1 2 3 4)";
-    match parse(inp) {
-        Ok(expr) => println!("input: {}, eval: {}", inp, eval(&expr, &env)),
-        Err(s)   => println!("{}", s)
-    }
-
-    inp = "(+ 3.14159 -3 x)";
-    match parse(inp) {
-        Ok(expr) => println!("input: {}, eval: {}", inp, eval(&expr, &env)),
-        Err(s)   => println!("{}", s)
-    }
-
-    inp = "(+)";
-    match parse(inp) {
-        Ok(expr) => println!("input: {}, eval: {}", inp, eval(&expr, &env)),
-        Err(s)   => println!("{}", s)
-    }
-
-    inp = "(if #t 5 6)";
-    match parse(inp) {
-        Ok(expr) => println!("input: {}, eval: {}", inp, eval(&expr, &env)),
-        Err(s)   => println!("{}", s)
-    }
-
-    inp = "(if #f 5 6)";
-    match parse(inp) {
-        Ok(expr) => println!("input: {}, eval: {}", inp, eval(&expr, &env)),
-        Err(s)   => println!("{}", s)
-    }
-
-    inp = "(if 4 5 6)";
-    match parse(inp) {
-        Ok(expr) => println!("input: {}, eval: {}", inp, eval(&expr, &env)),
-        Err(s)   => println!("{}", s)
-    }
-
-    inp = "(if 4 (+ -3.14159 x) 6)";
-    match parse(inp) {
-        Ok(expr) => println!("input: {}, eval: {}", inp, eval(&expr, &env)),
-        Err(s)   => println!("{}", s)
-    }
-
+    parse_eval("x", &env);
+    parse_eval("'z'", &env);
+    parse_eval("\"friends\"", &env);
+    parse_eval("()", &env);
+    parse_eval("(+ 1 1)", &env);
+    parse_eval("(+ 1 2 3 4)", &env);
+    parse_eval("(+ 3.14159 -3 x)", &env);
+    parse_eval("(+)", &env);
+    parse_eval("(if #t 5 6)", &env);
+    parse_eval("(if #f 5 6)", &env);
+    parse_eval("(if 4 5 6)", &env);
+    parse_eval("(if 4 (+ -3.14159 x) 6)", &env);
 
     let a = parse("(5");
     println!("{}", a);
@@ -98,6 +34,13 @@ fn main() {
     println!("{}", BVector(~[BPair( ~Cons(BNumber(3.14159), ~Nil) ), 
                                      BChar('z'), BBoolean(true)]));
 
+}
+
+fn parse_eval(inp: &str, env: &Environment) {
+    match parse(inp) {
+        Ok(expr) => println!("input: {}, eval: {}", inp, eval(&expr, env)),
+        Err(s)   => println!("{}", s)
+    }
 }
 
 #[deriving(Clone, Eq)]
