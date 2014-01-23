@@ -33,6 +33,12 @@ fn main() {
         Err(s)   => println!("{}", s)
     }
 
+    inp = "()";
+    match parse(inp) {
+        Ok(expr) => println!("input: {}, eval: {}", inp, eval(&expr, &env)),
+        Err(s)   => println!("{}", s)
+    }
+
 
     let a = parse("(5");
     println!("{}", a);
@@ -143,6 +149,11 @@ type Environment = HashMap<~str, BValue>;
 
 
 fn parse(s: &str) -> Result<Expression, ~str> {
+    if eq_slice(s, "()") {
+        let x: ~[Expression] = ~[];
+        return Ok( Node(x) );
+    }
+
     let s1 = s.replace("(", "( ").replace(")", " )");
     let tokens: ~[&str] = s1.split(' ').collect();
     if !eq_slice(tokens[0], "(") {
@@ -189,7 +200,8 @@ fn eval(expr: &Expression, env: &Environment) -> Result<BValue, ~str> {
             }
             }
         },
-        Node(_) => Err(~"not implemented")
+        Node([]) => Ok( BPair(~Nil) ),
+        Node([ref f, ..rest]) => eval(f, env)
     }
 }
 
