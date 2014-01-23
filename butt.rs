@@ -64,6 +64,30 @@ fn main() {
         Err(s)   => println!("{}", s)
     }
 
+    inp = "(if #t 5 6)";
+    match parse(inp) {
+        Ok(expr) => println!("input: {}, eval: {}", inp, eval(&expr, &env)),
+        Err(s)   => println!("{}", s)
+    }
+
+    inp = "(if #f 5 6)";
+    match parse(inp) {
+        Ok(expr) => println!("input: {}, eval: {}", inp, eval(&expr, &env)),
+        Err(s)   => println!("{}", s)
+    }
+
+    inp = "(if 4 5 6)";
+    match parse(inp) {
+        Ok(expr) => println!("input: {}, eval: {}", inp, eval(&expr, &env)),
+        Err(s)   => println!("{}", s)
+    }
+
+    inp = "(if 4 (+ -3.14159 x) 6)";
+    match parse(inp) {
+        Ok(expr) => println!("input: {}, eval: {}", inp, eval(&expr, &env)),
+        Err(s)   => println!("{}", s)
+    }
+
 
     let a = parse("(5");
     println!("{}", a);
@@ -230,6 +254,8 @@ fn eval(expr: &Expression, env: &Environment) -> Result<BValue, ~str> {
             //if f is builtin, we do something special.
             if f.eq( &Leaf(~"+") ) {
                 eval_plus(rest, env)
+            } else if f.eq( &Leaf(~"if") ) {
+                eval_if(rest, env)
             } else {
                 eval(f, env)
             }
@@ -305,4 +331,19 @@ fn eval_plus(args: &[Expression], env: &Environment) -> Result<BValue, ~str> {
 
     Ok( BNumber(sum) )
 
+}
+
+fn eval_if(args: &[Expression], env: &Environment) -> Result<BValue, ~str> {
+    if args.len() != 3 {
+        return Err(~"Incorrect number of arguments to `if`");
+    }
+
+    match eval(&args[0], env) {
+        Err(x)      => { return Err(x); },
+        Ok(ref x) => 
+            match *x {
+                BBoolean(false) => eval(&args[2], env),
+                _               => eval(&args[1], env)
+            }
+    }
 }
