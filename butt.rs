@@ -58,6 +58,12 @@ fn main() {
         Err(s)   => println!("{}", s)
     }
 
+    inp = "(+)";
+    match parse(inp) {
+        Ok(expr) => println!("input: {}, eval: {}", inp, eval(&expr, &env)),
+        Err(s)   => println!("{}", s)
+    }
+
 
     let a = parse("(5");
     println!("{}", a);
