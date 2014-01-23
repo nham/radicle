@@ -1,6 +1,6 @@
 use std::fmt::{Default, Formatter};
 use std::from_str::from_str;
-use std::str::{eq_slice};
+use std::str::{eq_slice, eq};
 use std::option::{Option};
 use std::hashmap::HashMap;
 use std::clone::Clone;
@@ -11,25 +11,25 @@ fn main() {
 
     let mut inp = "-3.14159";
     match parse(inp) {
-        Ok(expr) => println!("input: {}, eval: {}", inp, eval(expr, &env)),
+        Ok(expr) => println!("input: {}, eval: {}", inp, eval(&expr, &env)),
         Err(s)   => println!("{}", s)
     }
 
     inp = "x";
     match parse(inp) {
-        Ok(expr) => println!("input: {}, eval: {}", inp, eval(expr, &env)),
+        Ok(expr) => println!("input: {}, eval: {}", inp, eval(&expr, &env)),
         Err(s)   => println!("{}", s)
     }
 
     inp = "'z'";
     match parse(inp) {
-        Ok(expr) => println!("input: {}, eval: {}", inp, eval(expr, &env)),
+        Ok(expr) => println!("input: {}, eval: {}", inp, eval(&expr, &env)),
         Err(s)   => println!("{}", s)
     }
 
     inp = "\"friends\"";
     match parse(inp) {
-        Ok(expr) => println!("input: {}, eval: {}", inp, eval(expr, &env)),
+        Ok(expr) => println!("input: {}, eval: {}", inp, eval(&expr, &env)),
         Err(s)   => println!("{}", s)
     }
 
@@ -165,9 +165,9 @@ fn parse(s: &str) -> Result<Expression, ~str> {
     }
 }
 
-fn eval(expr: Expression, env: &Environment) -> Result<BValue, ~str> {
-    match expr {
-        Leaf(x) => {
+fn eval(expr: &Expression, env: &Environment) -> Result<BValue, ~str> {
+    match *expr {
+        Leaf(ref x) => {
             match eval_bool(x) {
                 Some(b) => Ok( BBoolean(b) ),
                 None    => 
@@ -194,21 +194,21 @@ fn eval(expr: Expression, env: &Environment) -> Result<BValue, ~str> {
 }
 
 
-fn eval_bool(s: &str) -> Option<bool> {
-    if eq_slice(s, "#t") {
+fn eval_bool(s: &~str) -> Option<bool> {
+    if eq(s, &~"#t") {
         Some(true)
-    } else if eq_slice(s, "#f") {
+    } else if eq(s, &~"#f") {
         Some(false)
     } else {
         None
     }
 }
 
-fn eval_num(s: &str) -> Option<f64> {
-    from_str::<f64>(s)
+fn eval_num(s: &~str) -> Option<f64> {
+    from_str::<f64>(*s)
 }
 
-fn eval_char(s: &str) -> Option<char> {
+fn eval_char(s: &~str) -> Option<char> {
     let x: ~[char] = s.chars().collect();
     if x.len() == 3 && x[0] == '\'' && x[2] == '\'' {
         Some(x[1])
@@ -217,7 +217,7 @@ fn eval_char(s: &str) -> Option<char> {
     }
 }
 
-fn eval_string(s: &str) -> Option<~str> {
+fn eval_string(s: &~str) -> Option<~str> {
     let len = s.char_len();
     if len > 1 && s.char_at(0) == '"' && s.char_at(len - 1) == '"' {
         Some(s.slice(1, len - 1).to_owned())
@@ -227,7 +227,7 @@ fn eval_string(s: &str) -> Option<~str> {
     
 }
 
-fn eval_symbol(s: &str, env: &Environment) -> Option<BValue> {
+fn eval_symbol(s: &~str, env: &Environment) -> Option<BValue> {
     //println!("{}", env);
     // env.find
     let key = &s.to_owned();
