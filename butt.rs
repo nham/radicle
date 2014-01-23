@@ -4,6 +4,7 @@ use std::str::{eq_slice, eq};
 use std::option::{Option};
 use std::hashmap::HashMap;
 use std::clone::Clone;
+use std::cmp::Eq;
 
 fn main() {
     let mut env: Environment = HashMap::new();
@@ -51,7 +52,7 @@ fn main() {
 
 }
 
-#[deriving(Clone)]
+#[deriving(Clone, Eq)]
 enum Expression {
     Leaf(~str),
     Node(~[Expression])
@@ -200,8 +201,36 @@ fn eval(expr: &Expression, env: &Environment) -> Result<BValue, ~str> {
             }
             }
         },
-        Node([]) => Ok( BPair(~Nil) ),
-        Node([ref f, ..rest]) => eval(f, env)
+        Node([]) => Err(~"Todo: error message for ()"),
+        Node([ref f, ..rest]) => {
+            //if f is builtin, we do something special.
+            if f.eq( &Leaf(~"+") ) {
+                let mut sum = 0.0;
+
+                for arg in rest.iter() {
+                    match eval(arg, env) {
+                        Err(x) => {
+                            return Err(x);
+                        },
+
+                        Ok(ref x) =>
+                            /*
+                            match x {
+                                BNumber(num) => {
+                                    sum += num;; 
+                                },
+                                _ => Err(~"Argument is not a number")
+                            */
+                            {}
+                    }
+                }
+
+                Ok( BNumber(sum) )
+
+            } else {
+                eval(f, env)
+            }
+        }
     }
 }
 
