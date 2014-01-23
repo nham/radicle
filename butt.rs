@@ -52,6 +52,12 @@ fn main() {
         Err(s)   => println!("{}", s)
     }
 
+    inp = "(+ 3.14159 -3 x)";
+    match parse(inp) {
+        Ok(expr) => println!("input: {}, eval: {}", inp, eval(&expr, &env)),
+        Err(s)   => println!("{}", s)
+    }
+
 
     let a = parse("(5");
     println!("{}", a);
@@ -217,28 +223,7 @@ fn eval(expr: &Expression, env: &Environment) -> Result<BValue, ~str> {
         Node([ref f, ..rest]) => {
             //if f is builtin, we do something special.
             if f.eq( &Leaf(~"+") ) {
-                let mut sum = 0.0;
-
-                for arg in rest.iter() {
-                    match eval(arg, env) {
-                        Err(x) => {
-                            return Err(x);
-                        },
-
-                        Ok(ref x) =>
-                            match *x {
-                                BNumber(num) => {
-                                    sum += num;
-                                },
-                                _ => {
-                                    return Err(~"Argument is not a number");
-                                }
-                            }
-                    } // end match
-                } // end for
-
-                Ok( BNumber(sum) )
-
+                eval_plus(rest, env)
             } else {
                 eval(f, env)
             }
@@ -288,4 +273,30 @@ fn eval_symbol(s: &~str, env: &Environment) -> Option<BValue> {
         Some(x) => Some(x),
         None     => Some(BSymbol(s.to_owned()))
     }
+}
+
+
+fn eval_plus(args: &[Expression], env: &Environment) -> Result<BValue, ~str> {
+    let mut sum = 0.0;
+
+    for arg in args.iter() {
+        match eval(arg, env) {
+            Err(x) => {
+                return Err(x);
+            },
+
+            Ok(ref x) =>
+                match *x {
+                    BNumber(num) => {
+                        sum += num;
+                    },
+                    _ => {
+                        return Err(~"Argument is not a number");
+                    }
+                }
+        } // end match
+    } // end for
+
+    Ok( BNumber(sum) )
+
 }
