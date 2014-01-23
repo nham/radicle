@@ -40,6 +40,18 @@ fn main() {
         Err(s)   => println!("{}", s)
     }
 
+    inp = "(+ 1 1)";
+    match parse(inp) {
+        Ok(expr) => println!("input: {}, eval: {}", inp, eval(&expr, &env)),
+        Err(s)   => println!("{}", s)
+    }
+
+    inp = "(+ 1 2 3 4)";
+    match parse(inp) {
+        Ok(expr) => println!("input: {}, eval: {}", inp, eval(&expr, &env)),
+        Err(s)   => println!("{}", s)
+    }
+
 
     let a = parse("(5");
     println!("{}", a);
@@ -201,7 +213,7 @@ fn eval(expr: &Expression, env: &Environment) -> Result<BValue, ~str> {
             }
             }
         },
-        Node([]) => Err(~"Todo: error message for ()"),
+        Node([]) => Err(~"TODO: error message for ()"),
         Node([ref f, ..rest]) => {
             //if f is builtin, we do something special.
             if f.eq( &Leaf(~"+") ) {
@@ -214,16 +226,16 @@ fn eval(expr: &Expression, env: &Environment) -> Result<BValue, ~str> {
                         },
 
                         Ok(ref x) =>
-                            /*
-                            match x {
+                            match *x {
                                 BNumber(num) => {
-                                    sum += num;; 
+                                    sum += num;
                                 },
-                                _ => Err(~"Argument is not a number")
-                            */
-                            {}
-                    }
-                }
+                                _ => {
+                                    return Err(~"Argument is not a number");
+                                }
+                            }
+                    } // end match
+                } // end for
 
                 Ok( BNumber(sum) )
 
