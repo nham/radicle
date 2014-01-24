@@ -2,11 +2,22 @@ use std::char::is_whitespace;
 use std::vec::MoveItems;
 use std::iter::Peekable;
 
+use std::fmt::{Default, Formatter};
+
 fn main() {
 
-    print_tokens(tokenize("559294)"));
+    let mut parsed = read("559294)");
+    match parsed {
+        Ok(x) => { println!("{}", x); },
+        Err(x) => { println!("{}", x); }
+    }
+
     println!("-----------");
-    print_tokens(tokenize("( 559294 x 79% ()  )"));
+    parsed = read("( 559294 x 79% ()  )");
+    match parsed {
+        Ok(x) => { println!("{}", x); },
+        Err(x) => { println!("{}", x); }
+    }
 }
 
 fn print_tokens(mut v: TokenStream) {
@@ -18,10 +29,44 @@ fn print_tokens(mut v: TokenStream) {
 type Expression = Tree<~str>;
 
 enum Tree<T> {
-    Node(T, ~[Tree<T>])
+    Leaf(T),
+    Branch(~[Tree<T>])
+}
+
+impl<T: Default> Default for Tree<T> {
+    fn fmt(v: &Tree<T>, f: &mut Formatter) {
+        match *v {
+            Branch(ref vec) => write!(f.buf, "Node{}", *vec),
+            Leaf(ref val) => write!(f.buf, "Leaf({})", *val)
+        }
+    }
+}
+
+impl<T: Default> Default for ~[Tree<T>] {
+    fn fmt(v: &~[Tree<T>], f: &mut Formatter) {
+        write!(f.buf, "[");
+
+        for x in v.iter() {
+            write!(f.buf, " {}", *x);
+
+        }
+
+        write!(f.buf, " ]");
+    }
 }
 
 type TokenStream = Peekable<~str, MoveItems<~str>>;
+
+fn read(s: &str) -> Result<Expression, &str> {
+    let mut stream = tokenize(s);
+    let x = read_from(&mut stream);
+
+    if !stream.is_empty() {
+        return Err("Tokens left over, so parse was unsuccessful.");
+    }
+
+    x
+}
 
 
 // only works with expressions separated
@@ -40,10 +85,10 @@ fn tokenize(s: &str) -> TokenStream {
     ret.move_iter().peekable()
 }
 
-fn read_from(mut v: TokenStream) -> (TokenStream, Result<Expression, &str>) {
+fn read_from(v: &mut TokenStream) -> Result<Expression, &str> {
     let tok = v.next();
     match tok {
-        None        => (v, Err("Unexpected end of token stream")),
+        None        => Err("Unexpected end of token stream"),
         Some(s) =>
             if "(".equiv(&s) {
                 let mut ch = ~[];
@@ -51,24 +96,21 @@ fn read_from(mut v: TokenStream) -> (TokenStream, Result<Expression, &str>) {
                 loop {
                     match v.peek() {
                         Some(x) if ")".equiv(x) => { break; },
-                        _                   => {
-                            let (w, res) = read_from(v);
-                            v = w;
+                        _                       => {}
+                    }
 
-                            match res {
-                                Err(e) => return (v, Err(e)),
-                                Ok(expr) => { ch.push(expr); }
-                            }
-                        }
+                    match read_from(v) {
+                        Err(e) => { return Err(e); },
+                        Ok(expr) => { ch.push(expr); }
                     }
                 }
 
-                (v, Ok(Node(s, ch)))
+                Ok( Branch(ch) )
 
             } else if ")".equiv(&s) {
-                (v, Err("Unexpected ')'"))
+                Err("Unexpected ')'")
             } else {
-                (v, Ok(Node(s, ~[])))
+                Ok( Leaf(s) )
             }
     }
 }
