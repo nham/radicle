@@ -18,6 +18,13 @@ fn main() {
         Ok(x) => { println!("{}", x); },
         Err(x) => { println!("{}", x); }
     }
+
+    parsed = read("(gub (middle) end)");
+    match parsed {
+        Ok(x) => { println!("{}", x); },
+        Err(x) => { println!("{}", x); }
+    }
+
 }
 
 fn print_tokens(mut v: TokenStream) {
@@ -61,7 +68,8 @@ fn read(s: &str) -> Result<Expression, &str> {
     let mut stream = tokenize(s);
     let x = read_from(&mut stream);
 
-    if !stream.is_empty() {
+    // eventually this will be stream.is_empty(), but theres a bug rust!
+    if stream.peek().is_some() {
         return Err("Tokens left over, so parse was unsuccessful.");
     }
 
@@ -105,6 +113,7 @@ fn read_from(v: &mut TokenStream) -> Result<Expression, &str> {
                     }
                 }
 
+                v.next();
                 Ok( Branch(ch) )
 
             } else if ")".equiv(&s) {
