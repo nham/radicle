@@ -102,9 +102,11 @@ fn read_from(v: &mut TokenStream) -> Result<Expression, &str> {
                 let mut ch = ~[];
 
                 loop {
-                    match v.peek() {
-                        Some(x) if ")".equiv(x) => { break; },
-                        _                       => {}
+                    {
+                        let x = v.peek();
+                        if x.is_some() && ")".equiv(x.unwrap()) {
+                            break;
+                        }
                     }
 
                     match read_from(v) {
