@@ -43,7 +43,7 @@ enum Tree<T> {
 impl<T: Default> Default for Tree<T> {
     fn fmt(v: &Tree<T>, f: &mut Formatter) {
         match *v {
-            Branch(ref vec) => write!(f.buf, "Node{}", *vec),
+            Branch(ref vec) => write!(f.buf, "Branch{}", *vec),
             Leaf(ref val) => write!(f.buf, "Leaf({})", *val)
         }
     }
