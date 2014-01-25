@@ -24,9 +24,12 @@ fn main() {
     read_eval("(quote x)");
     read_eval("(atom x)");
     read_eval("(atom 1)");
-    read_eval("(atom ())");
+    read_eval("(atom (quote ()))");
     read_eval("(atom (my little pony))");
+    read_eval("(atom (quote (my little pony)))");
     read_eval("(atom (quote x))");
+    read_eval("(atom (atom x))");
+    read_eval("(car (quote (10 5 9)))");
 
 }
 
@@ -130,10 +133,10 @@ fn read_from(v: &mut TokenStream) -> Result<Expression, &str> {
 // of a list then pass the code directly to the procedure, quote *must* return
 // a "typed" representation.
 //   (cons 1 (quote (4 + 9 5))) is valid
-fn eval(expr: Expression) -> Result<Expression, &str> {
+fn eval(expr: Expression) -> Result<Expression, ~str> {
     match expr {
         Atom(_) => Ok(expr),
-        List([]) => Err("No procedure to call. TODO: a better error message?"),
+        List([]) => Err(~"No procedure to call. TODO: a better error message?"),
         List(vec) => {
             let t = Atom(~"t");
             let empty: Expression = List(~[]);
@@ -179,57 +182,76 @@ fn eval(expr: Expression) -> Result<Expression, &str> {
             match op_type {
                 Op_Quote => {
                     if vec.len() != 2 {
-                        Err("`quote` expects exactly one argument.")
+                        Err(~"`quote` expects exactly one argument.")
                     } else {
                         Ok( vec[1] )
                     }
                 },
                 Op_Atom => {
                     if vec.len() != 2 {
-                        Err("`atom` expects exactly one argument.")
+                        Err(~"`atom` expects exactly one argument.")
                     } else {
-                        if vec[1].is_atom() || vec[1].eq(&empty) {
-                            Ok( t )
-                        } else {
-                            Ok( empty )
+                        match eval(vec[1]) {
+                            Ok(val) =>
+                                if val.is_atom() || val.eq(&empty) {
+                                    Ok( t )
+                                } else {
+                                    Ok( empty )
+                                },
+                            err @ Err(_) => err,
                         }
                     }
                 },
                 Op_Eq => {
                     if vec.len() != 3 {
-                        Err("`eq` expects exactly two arguments.")
+                        Err(~"`eq` expects exactly two arguments.")
                     } else {
-                        if (vec[1].eq(&empty) && vec[2].eq(&empty))
-                           || (vec[1].is_atom() && vec[2].is_atom() && vec[1].eq(&vec[2])) {
-                            Ok( t )
+                        let res1 = eval(vec[1].clone());
+                        let res2 = eval(vec[2]);
+                        if res1.is_err() {
+                            res1
+                        } else if res2.is_err() {
+                            res2
                         } else {
-                            Ok( empty )
+                            let (val1, val2) = (res1.unwrap(), res2.unwrap());
+                            if (val1.eq(&empty) && val2.eq(&empty))
+                               || (val1.is_atom() && val2.is_atom() && val1.eq(&val2)) {
+                                Ok( t )
+                            } else {
+                                Ok( empty )
+                            }
                         }
                     }
                 },
                 Op_Car => {
                     if vec.len() != 2 {
-                        Err("`car` expects exactly one argument.")
+                        Err(~"`car` expects exactly one argument.")
                     } else {
-                        if vec[1].is_list() && !vec[1].eq(&empty) {
-                            let list = vec[1].unwrap_branch();
-                            Ok( list[0] )
+                        let res = eval(vec[1]);
+                        if res.is_err() {
+                            res
                         } else {
-                            Err("`car`'s argument must be a non-empty list")
+                            let val = res.unwrap();
+                            if val.is_list() && !val.eq(&empty) {
+                                let list = val.unwrap_branch();
+                                Ok( list[0] )
+                            } else {
+                                Err(~"`car`'s argument must be a non-empty list")
+                            }
                         }
                     }
                 },
                 Op_Cdr => {
-                    Err("not implemented")
+                    Err(~"not implemented")
                 },
                 Op_Cons => {
-                    Err("not implemented")
+                    Err(~"not implemented")
                 },
                 Op_Cond => {
-                    Err("not implemented")
+                    Err(~"not implemented")
                 },
                 Op_Proc => {
-                    Err("not implemented")
+                    Err(~"not implemented")
                 },
             }
 
