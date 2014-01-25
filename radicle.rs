@@ -133,12 +133,15 @@ fn eval(expr: Expression) -> Result<Expression, ~str> {
             let empty: Expression = List(~[]);
 
             if is_primitive_op("quote", &vec[0]) {
+
                 if vec.len() != 2 {
                     Err(~"`quote` expects exactly one argument.")
                 } else {
                     Ok( vec[1] )
                 }
+
             } else if is_primitive_op("atom", &vec[0]) {
+
                 if vec.len() != 2 {
                     Err(~"`atom` expects exactly one argument.")
                 } else {
@@ -152,7 +155,9 @@ fn eval(expr: Expression) -> Result<Expression, ~str> {
                         err @ Err(_) => err,
                     }
                 }
+
             } else if is_primitive_op("eq", &vec[0]) {
+
                 if vec.len() != 3 {
                     Err(~"`eq` expects exactly two arguments.")
                 } else {
@@ -172,7 +177,9 @@ fn eval(expr: Expression) -> Result<Expression, ~str> {
                         }
                     }
                 }
+
             } else if is_primitive_op("car", &vec[0]) {
+
                 if vec.len() != 2 {
                     Err(~"`car` expects exactly one argument.")
                 } else {
@@ -189,7 +196,9 @@ fn eval(expr: Expression) -> Result<Expression, ~str> {
                         }
                     }
                 }
+
             } else if is_primitive_op("cdr", &vec[0]) {
+
                 if vec.len() != 2 {
                     Err(~"`cdr` expects exactly one argument.")
                 } else {
@@ -207,7 +216,9 @@ fn eval(expr: Expression) -> Result<Expression, ~str> {
                         }
                     }
                 }
+
             } else if is_primitive_op("cons", &vec[0]) {
+
                 if vec.len() != 3 {
                     Err(~"`cons` expects exactly two arguments.")
                 } else {
@@ -228,7 +239,9 @@ fn eval(expr: Expression) -> Result<Expression, ~str> {
                         }
                     }
                 }
+
             } else if is_primitive_op("cond", &vec[0]) {
+
                 let mut i = 1;
                 while i < vec.len() {
                     if !vec[i].is_list() {
@@ -257,7 +270,9 @@ fn eval(expr: Expression) -> Result<Expression, ~str> {
                 }
 
                 Err(~"No branch of `cond` evaluated to true. Don't think this is an error, though. Need to decide how to handle.")
+
             } else {
+
                 let mut vals: ~[Expression] = ~[];
                 for n in vec.move_iter() {
                     let val = eval(n);
@@ -269,6 +284,7 @@ fn eval(expr: Expression) -> Result<Expression, ~str> {
                     }
                 }
                 Err(~"not implemented")
+
             }
 
         }
