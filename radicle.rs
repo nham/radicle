@@ -2,20 +2,16 @@ use std::char::is_whitespace;
 use std::vec::MoveItems;
 use std::iter::Peekable;
 
-use std::hashmap::HashMap;
-use std::from_str::from_str;
 use tree::Tree;
 use Atom = tree::Leaf;
 use List = tree::Branch;
 
 fn main() {
-    let env = Environment{ parent: None, env: HashMap::new() };
-
-    read_eval("5678)", &env);
+    read_eval("5678)");
     println!("-----------");
-    read_eval("wonky", &env);
+    read_eval("wonky");
     println!("-----------");
-    read_eval("(quote 55)", &env);
+    read_eval("(quote 55)");
     println!("-----------");
 /*
     read_eval("( 559294 x 79% ()  )", &env);
@@ -28,11 +24,11 @@ fn main() {
 }
 
 
-fn read_eval(s: &str, env: &Environment) {
+fn read_eval(s: &str) {
     println!("input: {}", s);
     let parsed = read(s);
     if parsed.is_ok() {
-        match eval(parsed.unwrap(), env) {
+        match eval(parsed.unwrap()) {
             Ok(x) => { println!("evaled: {}", x); },
             Err(x) => { println!("Eval error: {}", x); }
         }
@@ -54,11 +50,6 @@ impl ::tree::Tree<~str> {
     fn is_list(&self) -> bool {
         self.is_branch()
     }
-}
-
-struct Environment<'a> {
-    parent: Option<&'a Environment<'a>>,
-    env: HashMap<~str, Expression>,
 }
 
 
@@ -130,13 +121,14 @@ fn read_from(v: &mut TokenStream) -> Result<Expression, &str> {
 // of a list then pass the code directly to the procedure, quote *must* return
 // a "typed" representation.
 //   (cons 1 (quote (4 + 9 5))) is valid
-fn eval(expr: Expression, env: &Environment) -> Result<Expression, &str> {
+fn eval(expr: Expression) -> Result<Expression, &str> {
     match expr {
         Atom(_) => Ok(expr),
         List([]) => Err("No procedure to call. TODO: a better error message?"),
         List(vec) => {
             let t = Atom(~"t");
             let empty: Expression = List(~[]);
+
             enum Op {
                 Op_Quote,
                 Op_Atom,
