@@ -9,20 +9,6 @@ use List = tree::Branch;
 mod tree;
 
 fn main() {
-/*
-    read_eval("5678)");
-    println!("-----------");
-    read_eval("wonky");
-    println!("-----------");
-    read_eval("(quote 55)");
-    println!("-----------");
-    read_eval("( 559294 x 79% ()  )", &env);
-    println!("-----------");
-    read_eval("(gub (middle) end)", &env);
-    println!("-----------");
-    read_eval("(one 2)", &env);
-    */
-
     read_eval("(quote x)");
     read_eval("(atom x)");
     read_eval("(atom 1)");
@@ -86,7 +72,6 @@ fn read(s: &str) -> Result<Expression, &str> {
 
 
 // assumes that tokens do not have whitespace or parens in them
-// this would fail if we add char or string literals
 fn tokenize(s: &str) -> TokenStream {
     let s1 = s.replace("(", " ( ").replace(")", " ) ");
 
@@ -98,7 +83,7 @@ fn tokenize(s: &str) -> TokenStream {
             ret.push(e.to_owned());
         }
     }
-    //ret
+
     ret.move_iter().peekable()
 }
 
@@ -136,10 +121,6 @@ fn read_from(v: &mut TokenStream) -> Result<Expression, &str> {
 }
 
 
-// given that to do procedure calls, we want to evaluate all of the elements
-// of a list then pass the code directly to the procedure, quote *must* return
-// a "typed" representation.
-//   (cons 1 (quote (4 + 9 5))) is valid
 fn eval(expr: Expression) -> Result<Expression, ~str> {
     match expr {
         Atom(_) => Err(~"Symbol evaluation is unimplemented"),
