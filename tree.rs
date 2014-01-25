@@ -21,7 +21,14 @@ impl<T> Tree<T> {
     pub fn get_ref_leaf<'a>(&'a self) -> &'a T {
         match *self {
             Leaf(ref val) => val,
-            _         => fail!("called Tree<T>::unwrap_leaf() on Branch()"),
+            _         => fail!("called Tree<T>::get_ref_leaf() on Branch()"),
+        }
+    }
+
+    pub fn get_ref_branch<'a>(&'a self) -> &'a ~[Tree<T>] {
+        match *self {
+            Branch(ref val) => val,
+            _         => fail!("called Tree<T>::get_ref_branch() on Leaf()"),
         }
     }
 
