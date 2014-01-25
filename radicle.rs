@@ -33,6 +33,10 @@ fn main() {
     read_eval("(atom (quote x))");
     read_eval("(atom (atom x))");
     read_eval("(car (quote (10 5 9)))");
+    read_eval("(cdr (quote (10)))");
+    read_eval("(cdr (quote (10 5 9)))");
+    read_eval("(cons (quote 7) (quote (10 5 9)))");
+    read_eval("(cons (quote 7) (quote ()))");
 
 }
 
@@ -138,7 +142,7 @@ fn read_from(v: &mut TokenStream) -> Result<Expression, &str> {
 //   (cons 1 (quote (4 + 9 5))) is valid
 fn eval(expr: Expression) -> Result<Expression, ~str> {
     match expr {
-        Atom(s) => Err(~"Symbol evaluation is unimplemented"),
+        Atom(_) => Err(~"Symbol evaluation is unimplemented"),
         List([]) => Err(~"No procedure to call. TODO: a better error message?"),
         List(vec) => {
             let t = Atom(~"t");
@@ -245,10 +249,45 @@ fn eval(expr: Expression) -> Result<Expression, ~str> {
                     }
                 },
                 Op_Cdr => {
-                    Err(~"not implemented")
+                    if vec.len() != 2 {
+                        Err(~"`cdr` expects exactly one argument.")
+                    } else {
+                        let res = eval(vec[1]);
+                        if res.is_err() {
+                            res
+                        } else {
+                            let val = res.unwrap();
+                            if val.is_list() && !val.eq(&empty) {
+                                let mut list = val.unwrap_branch();
+                                list.shift();
+                                Ok( List(list) )
+                            } else {
+                                Err(~"`cdr`'s argument must be a non-empty list")
+                            }
+                        }
+                    }
                 },
                 Op_Cons => {
-                    Err(~"not implemented")
+                    if vec.len() != 3 {
+                        Err(~"`cons` expects exactly two arguments.")
+                    } else {
+                        let res1 = eval(vec[1].clone());
+                        let res2 = eval(vec[2]);
+                        if res1.is_err() {
+                            res1
+                        } else if res2.is_err() {
+                            res2
+                        } else {
+                            let (val1, val2) = (res1.unwrap(), res2.unwrap());
+                            if val2.is_list() {
+                                let mut list = val2.unwrap_branch();
+                                list.unshift(val1);
+                                Ok( List(list) )
+                            } else {
+                                Err(~"`cons`'s second argument must be a list")
+                            }
+                        }
+                    }
                 },
                 Op_Cond => {
                     Err(~"not implemented")
