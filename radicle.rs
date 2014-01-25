@@ -180,41 +180,37 @@ fn eval(expr: Expression) -> Result<Expression, ~str> {
 
             } else if is_primitive_op("car", &vec[0]) {
 
+                let eval_car = |val: Expression| -> Result<Expression, ~str> {
+                    if val.is_list() && !val.eq(&empty) {
+                        let list = val.unwrap_branch();
+                        Ok( list[0] )
+                    } else {
+                        Err(~"`car`'s argument must be a non-empty list")
+                    }
+                };
+
                 if vec.len() != 2 {
                     Err(~"`car` expects exactly one argument.")
                 } else {
-                    let res = eval(vec[1]);
-                    if res.is_err() {
-                        res
-                    } else {
-                        let val = res.unwrap();
-                        if val.is_list() && !val.eq(&empty) {
-                            let list = val.unwrap_branch();
-                            Ok( list[0] )
-                        } else {
-                            Err(~"`car`'s argument must be a non-empty list")
-                        }
-                    }
+                    result_bind(eval(vec[1]), eval_car)
                 }
 
             } else if is_primitive_op("cdr", &vec[0]) {
 
+                let eval_cdr = |val: Expression| -> Result<Expression, ~str> {
+                    if val.is_list() && !val.eq(&empty) {
+                        let mut list = val.unwrap_branch();
+                        list.shift();
+                        Ok( List(list) )
+                    } else {
+                        Err(~"`cdr`'s argument must be a non-empty list")
+                    }
+                };
+
                 if vec.len() != 2 {
                     Err(~"`cdr` expects exactly one argument.")
                 } else {
-                    let res = eval(vec[1]);
-                    if res.is_err() {
-                        res
-                    } else {
-                        let val = res.unwrap();
-                        if val.is_list() && !val.eq(&empty) {
-                            let mut list = val.unwrap_branch();
-                            list.shift();
-                            Ok( List(list) )
-                        } else {
-                            Err(~"`cdr`'s argument must be a non-empty list")
-                        }
-                    }
+                    result_bind(eval(vec[1]), eval_cdr)
                 }
 
             } else if is_primitive_op("cons", &vec[0]) {
@@ -297,5 +293,14 @@ fn is_primitive_op(op: &str, expr: &Expression) -> bool {
         op.equiv(expr_op)
     } else {
         false
+    }
+}
+
+
+// a bind for the Result<T, ~str> monad
+fn result_bind<S, T>(v: Result<S, ~str>, f: |S| -> Result<T, ~str>) -> Result<T, ~str> {
+    match v {
+        Err(s) => Err(s),
+        Ok(x) => f(x),
     }
 }
