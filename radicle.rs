@@ -148,147 +148,106 @@ fn eval(expr: Expression) -> Result<Expression, ~str> {
             let t = Atom(~"t");
             let empty: Expression = List(~[]);
 
-            enum Op {
-                Op_Quote,
-                Op_Atom,
-                Op_Eq,
-                Op_Car,
-                Op_Cdr,
-                Op_Cons,
-                Op_Cond,
-                Op_Proc,
-            }
-
-            let op_type: Op = {
-                let p = &vec[0];
-                if is_primitive_op("quote", p) {
-                    Op_Quote
-                } else if is_primitive_op("atom", p) {
-                    Op_Atom
-                } else if is_primitive_op("eq", p) {
-                    Op_Eq
-                } else if is_primitive_op("car", p) {
-                    Op_Car
-                } else if is_primitive_op("cdr", p) {
-                    Op_Cdr
-                } else if is_primitive_op("cons", p) {
-                    Op_Cons
-                } else if is_primitive_op("cond", p) {
-                    Op_Cond
+            if is_primitive_op("quote", &vec[0]) {
+                if vec.len() != 2 {
+                    Err(~"`quote` expects exactly one argument.")
                 } else {
-                    Op_Proc
+                    Ok( vec[1] )
                 }
-            };
-
-            match op_type {
-                Op_Quote => {
-                    if vec.len() != 2 {
-                        Err(~"`quote` expects exactly one argument.")
-                    } else {
-                        Ok( vec[1] )
-                    }
-                },
-                Op_Atom => {
-                    if vec.len() != 2 {
-                        Err(~"`atom` expects exactly one argument.")
-                    } else {
-                        match eval(vec[1]) {
-                            Ok(val) =>
-                                if val.is_atom() || val.eq(&empty) {
-                                    Ok( t )
-                                } else {
-                                    Ok( empty )
-                                },
-                            err @ Err(_) => err,
-                        }
-                    }
-                },
-                Op_Eq => {
-                    if vec.len() != 3 {
-                        Err(~"`eq` expects exactly two arguments.")
-                    } else {
-                        let res1 = eval(vec[1].clone());
-                        let res2 = eval(vec[2]);
-                        if res1.is_err() {
-                            res1
-                        } else if res2.is_err() {
-                            res2
-                        } else {
-                            let (val1, val2) = (res1.unwrap(), res2.unwrap());
-                            if (val1.eq(&empty) && val2.eq(&empty))
-                               || (val1.is_atom() && val2.is_atom() && val1.eq(&val2)) {
+            } else if is_primitive_op("atom", &vec[0]) {
+                if vec.len() != 2 {
+                    Err(~"`atom` expects exactly one argument.")
+                } else {
+                    match eval(vec[1]) {
+                        Ok(val) =>
+                            if val.is_atom() || val.eq(&empty) {
                                 Ok( t )
                             } else {
                                 Ok( empty )
-                            }
-                        }
+                            },
+                        err @ Err(_) => err,
                     }
-                },
-                Op_Car => {
-                    if vec.len() != 2 {
-                        Err(~"`car` expects exactly one argument.")
+                }
+            } else if is_primitive_op("eq", &vec[0]) {
+                if vec.len() != 3 {
+                    Err(~"`eq` expects exactly two arguments.")
+                } else {
+                    let res1 = eval(vec[1].clone());
+                    let res2 = eval(vec[2]);
+                    if res1.is_err() {
+                        res1
+                    } else if res2.is_err() {
+                        res2
                     } else {
-                        let res = eval(vec[1]);
-                        if res.is_err() {
-                            res
+                        let (val1, val2) = (res1.unwrap(), res2.unwrap());
+                        if (val1.eq(&empty) && val2.eq(&empty))
+                           || (val1.is_atom() && val2.is_atom() && val1.eq(&val2)) {
+                            Ok( t )
                         } else {
-                            let val = res.unwrap();
-                            if val.is_list() && !val.eq(&empty) {
-                                let list = val.unwrap_branch();
-                                Ok( list[0] )
-                            } else {
-                                Err(~"`car`'s argument must be a non-empty list")
-                            }
+                            Ok( empty )
                         }
                     }
-                },
-                Op_Cdr => {
-                    if vec.len() != 2 {
-                        Err(~"`cdr` expects exactly one argument.")
+                }
+            } else if is_primitive_op("car", &vec[0]) {
+                if vec.len() != 2 {
+                    Err(~"`car` expects exactly one argument.")
+                } else {
+                    let res = eval(vec[1]);
+                    if res.is_err() {
+                        res
                     } else {
-                        let res = eval(vec[1]);
-                        if res.is_err() {
-                            res
+                        let val = res.unwrap();
+                        if val.is_list() && !val.eq(&empty) {
+                            let list = val.unwrap_branch();
+                            Ok( list[0] )
                         } else {
-                            let val = res.unwrap();
-                            if val.is_list() && !val.eq(&empty) {
-                                let mut list = val.unwrap_branch();
-                                list.shift();
-                                Ok( List(list) )
-                            } else {
-                                Err(~"`cdr`'s argument must be a non-empty list")
-                            }
+                            Err(~"`car`'s argument must be a non-empty list")
                         }
                     }
-                },
-                Op_Cons => {
-                    if vec.len() != 3 {
-                        Err(~"`cons` expects exactly two arguments.")
+                }
+            } else if is_primitive_op("cdr", &vec[0]) {
+                if vec.len() != 2 {
+                    Err(~"`cdr` expects exactly one argument.")
+                } else {
+                    let res = eval(vec[1]);
+                    if res.is_err() {
+                        res
                     } else {
-                        let res1 = eval(vec[1].clone());
-                        let res2 = eval(vec[2]);
-                        if res1.is_err() {
-                            res1
-                        } else if res2.is_err() {
-                            res2
+                        let val = res.unwrap();
+                        if val.is_list() && !val.eq(&empty) {
+                            let mut list = val.unwrap_branch();
+                            list.shift();
+                            Ok( List(list) )
                         } else {
-                            let (val1, val2) = (res1.unwrap(), res2.unwrap());
-                            if val2.is_list() {
-                                let mut list = val2.unwrap_branch();
-                                list.unshift(val1);
-                                Ok( List(list) )
-                            } else {
-                                Err(~"`cons`'s second argument must be a list")
-                            }
+                            Err(~"`cdr`'s argument must be a non-empty list")
                         }
                     }
-                },
-                Op_Cond => {
-                    Err(~"not implemented")
-                },
-                Op_Proc => {
-                    Err(~"not implemented")
-                },
+                }
+            } else if is_primitive_op("cons", &vec[0]) {
+                if vec.len() != 3 {
+                    Err(~"`cons` expects exactly two arguments.")
+                } else {
+                    let res1 = eval(vec[1].clone());
+                    let res2 = eval(vec[2]);
+                    if res1.is_err() {
+                        res1
+                    } else if res2.is_err() {
+                        res2
+                    } else {
+                        let (val1, val2) = (res1.unwrap(), res2.unwrap());
+                        if val2.is_list() {
+                            let mut list = val2.unwrap_branch();
+                            list.unshift(val1);
+                            Ok( List(list) )
+                        } else {
+                            Err(~"`cons`'s second argument must be a list")
+                        }
+                    }
+                }
+            } else if is_primitive_op("cond", &vec[0]) {
+                Err(~"not implemented")
+            } else {
+                Err(~"not implemented")
             }
 
             /*
