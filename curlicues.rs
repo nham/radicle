@@ -2,40 +2,36 @@ use std::char::is_whitespace;
 use std::vec::MoveItems;
 use std::iter::Peekable;
 
+use std::hashmap::HashMap;
 use std::fmt::{Default, Formatter};
 use std::from_str::from_str;
 
 fn main() {
+    let env = Environment{ parent: None, env: HashMap::new() };
 
-    let mut parsed = read("559294)");
-    match parsed {
-        Ok(x) => { println!("{}", x); },
-        Err(x) => { println!("{}", x); }
-    }
-
+    read_eval("5678)", &env);
     println!("-----------");
-    parsed = read("( 559294 x 79% ()  )");
-    match parsed {
-        Ok(x) => { println!("{}", x); },
-        Err(x) => { println!("{}", x); }
+    read_eval("wonky", &env);
+    println!("-----------");
+    read_eval("( 559294 x 79% ()  )", &env);
+    println!("-----------");
+    read_eval("(gub (middle) end)", &env);
+    println!("-----------");
+    read_eval("(one 2)", &env);
+
+}
+
+fn read_eval(s: &str, env: &Environment) {
+    println!("input: {}", s);
+    let parsed = read(s);
+    if parsed.is_ok() {
+        match eval(parsed.unwrap(), env) {
+            Ok(x) => { println!("evaled: {}", x); },
+            Err(x) => { println!("Eval error: {}", x); }
+        }
+    } else {
+        println!("Parse error: {}", parsed.unwrap_err());
     }
-
-    println!("{}", Branch(~[Leaf(~"gub"), 
-                            Branch(~[Leaf(~"middle")]),
-                            Leaf(~"end")]));
-
-    parsed = read("(gub (middle) end)");
-    match parsed {
-        Ok(x) => { println!("{}", x); },
-        Err(x) => { println!("{}", x); }
-    }
-
-    parsed = read("(one 2");
-    match parsed {
-        Ok(x) => { println!("{}", x); },
-        Err(x) => { println!("{}", x); }
-    }
-
 }
 
 type Expression = Tree<Atom>;
@@ -69,6 +65,10 @@ impl<T: Default> Default for ~[Tree<T>] {
 
 type TokenStream = Peekable<~str, MoveItems<~str>>;
 
+struct Environment<'a> {
+    parent: Option<&'a Environment<'a>>,
+    env: HashMap<~str, Expression>,
+}
 
 enum Atom {
     Symbol(~str),
@@ -153,3 +153,16 @@ fn read_from(v: &mut TokenStream) -> Result<Expression, &str> {
             }
     }
 }
+
+
+// given that to do procedure calls, we want to evaluate all of the elements
+// of a list then pass the code directly to the procedure, quote *must* return
+// a "typed" representation.
+//   (cons 1 (quote (4 + 9 5))) is valid
+fn eval(expr: Expression, env: &Environment) -> Result<Expression, &str> {
+    match expr {
+        Leaf(_) => Ok(expr),
+        Branch(ref b) => Err("not implemented")
+    }
+}
+
