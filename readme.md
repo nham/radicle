@@ -1,3 +1,3 @@
-# Butt
+# Curlicues
 
-An R4RS Scheme interpreter written in Rust.
+A basic Lisp interpreter written in Rust.
