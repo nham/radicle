@@ -161,26 +161,20 @@ fn eval(expr: Expression) -> Result<Expression, ~str> {
 
             let op_type: Op = {
                 let p = &vec[0];
-                if p.is_atom() {
-                    let op = p.get_ref_leaf();
-                
-                    if "quote".equiv(op) {
-                        Op_Quote
-                    } else if "atom".equiv(op) {
-                        Op_Atom
-                    } else if "eq".equiv(op) {
-                        Op_Eq
-                    } else if "car".equiv(op) {
-                        Op_Car
-                    } else if "cdr".equiv(op) {
-                        Op_Cdr
-                    } else if "cons".equiv(op) {
-                        Op_Cons
-                    } else if "cond".equiv(op) {
-                        Op_Cond
-                    } else {
-                        Op_Proc
-                    }
+                if is_primitive_op("quote", p) {
+                    Op_Quote
+                } else if is_primitive_op("atom", p) {
+                    Op_Atom
+                } else if is_primitive_op("eq", p) {
+                    Op_Eq
+                } else if is_primitive_op("car", p) {
+                    Op_Car
+                } else if is_primitive_op("cdr", p) {
+                    Op_Cdr
+                } else if is_primitive_op("cons", p) {
+                    Op_Cons
+                } else if is_primitive_op("cond", p) {
+                    Op_Cond
                 } else {
                     Op_Proc
                 }
@@ -310,5 +304,14 @@ fn eval(expr: Expression) -> Result<Expression, ~str> {
                 }
                 */
         }
+    }
+}
+
+fn is_primitive_op(op: &str, expr: &Expression) -> bool {
+    if expr.is_atom() {
+        let expr_op = expr.get_ref_leaf();
+        op.equiv(expr_op)
+    } else {
+        false
     }
 }
