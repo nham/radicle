@@ -34,7 +34,24 @@ fn read_eval(s: &str, env: &Environment) {
     }
 }
 
-type Expression = Tree<Atom>;
+
+type TokenStream = Peekable<~str, MoveItems<~str>>;
+
+enum Atom {
+    Symbol(~str),
+    Number(f64)
+}
+
+impl Default for Atom {
+    fn fmt(a: &Atom, f: &mut Formatter) {
+        match *a {
+            Symbol(ref sym) => write!(f.buf, "{}", *sym),
+            Number(num) => write!(f.buf, "{}", num)
+        }
+
+    }
+}
+
 
 enum Tree<T> {
     Leaf(T),
@@ -63,26 +80,12 @@ impl<T: Default> Default for ~[Tree<T>] {
     }
 }
 
-type TokenStream = Peekable<~str, MoveItems<~str>>;
+
+type Expression = Tree<Atom>;
 
 struct Environment<'a> {
     parent: Option<&'a Environment<'a>>,
     env: HashMap<~str, Expression>,
-}
-
-enum Atom {
-    Symbol(~str),
-    Number(f64)
-}
-
-impl Default for Atom {
-    fn fmt(a: &Atom, f: &mut Formatter) {
-        match *a {
-            Symbol(ref sym) => write!(f.buf, "{}", *sym),
-            Number(num) => write!(f.buf, "{}", num)
-        }
-
-    }
 }
 
 
@@ -99,7 +102,8 @@ fn read(s: &str) -> Result<Expression, &str> {
 }
 
 
-// only works with expressions separated
+// assumes that tokens do not have whitespace or parens in them
+// this would fail if we add char or string literals
 fn tokenize(s: &str) -> TokenStream {
     let s1 = s.replace("(", "( ").replace(")", " )");
 
