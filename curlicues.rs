@@ -42,6 +42,20 @@ enum Atom {
     Number(f64)
 }
 
+enum Tree<T> {
+    Leaf(T),
+    Branch(~[Tree<T>])
+}
+
+type Expression = Tree<Atom>;
+
+
+struct Environment<'a> {
+    parent: Option<&'a Environment<'a>>,
+    env: HashMap<~str, Expression>,
+}
+
+
 impl Default for Atom {
     fn fmt(a: &Atom, f: &mut Formatter) {
         match *a {
@@ -50,12 +64,6 @@ impl Default for Atom {
         }
 
     }
-}
-
-
-enum Tree<T> {
-    Leaf(T),
-    Branch(~[Tree<T>])
 }
 
 impl<T: Default> Default for Tree<T> {
@@ -78,14 +86,6 @@ impl<T: Default> Default for ~[Tree<T>] {
 
         write!(f.buf, " ]");
     }
-}
-
-
-type Expression = Tree<Atom>;
-
-struct Environment<'a> {
-    parent: Option<&'a Environment<'a>>,
-    env: HashMap<~str, Expression>,
 }
 
 
