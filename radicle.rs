@@ -84,7 +84,7 @@ fn read(s: &str) -> Result<Expression, &str> {
 // assumes that tokens do not have whitespace or parens in them
 // this would fail if we add char or string literals
 fn tokenize(s: &str) -> TokenStream {
-    let s1 = s.replace("(", "( ").replace(")", " )");
+    let s1 = s.replace("(", " ( ").replace(")", " ) ");
 
     let x: ~[&str] = s1.split(|c: char| is_whitespace(c)).collect();
     
