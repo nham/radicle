@@ -166,7 +166,22 @@ fn read_from(v: &mut TokenStream) -> Result<Expression, &str> {
 fn eval(expr: Expression, env: &Environment) -> Result<Expression, &str> {
     match expr {
         Leaf(_) => Ok(expr),
-        Branch(ref b) => Err("not implemented")
+        Branch([]) => Err("No procedure to call. TODO: a better error message?"),
+        Branch([ref p, ..rest]) => {
+            /*
+                let mut vals: ~[Expression] = ~[];
+                for n in nodes.move_iter() {
+                    let val = eval(n, env);
+
+                    if val.is_err() {
+                        return val;
+                    } else {
+                        vals.push(val.unwrap());
+                    }
+                }
+                */
+                Err("not implemented")
+            }
     }
 }
 
