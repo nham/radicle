@@ -138,16 +138,7 @@ fn read_from(v: &mut TokenStream) -> Result<Expression, &str> {
 //   (cons 1 (quote (4 + 9 5))) is valid
 fn eval(expr: Expression) -> Result<Expression, ~str> {
     match expr {
-        Atom(s) => {
-            if { 
-                let x = &s; 
-                ( from_str::<f64>(*x) ).is_some()
-            } {
-                Ok( Atom(s) )
-            } else {
-                Err(~"Symbol evaluation is unimplemented")
-            }
-        },
+        Atom(s) => Err(~"Symbol evaluation is unimplemented"),
         List([]) => Err(~"No procedure to call. TODO: a better error message?"),
         List(vec) => {
             let t = Atom(~"t");
