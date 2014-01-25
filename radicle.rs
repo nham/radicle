@@ -247,13 +247,9 @@ fn eval(expr: Expression) -> Result<Expression, ~str> {
             } else if is_primitive_op("cond", &vec[0]) {
                 Err(~"not implemented")
             } else {
-                Err(~"not implemented")
-            }
-
-            /*
                 let mut vals: ~[Expression] = ~[];
-                for n in nodes.move_iter() {
-                    let val = eval(n, env);
+                for n in vec.move_iter() {
+                    let val = eval(n);
 
                     if val.is_err() {
                         return val;
@@ -261,7 +257,9 @@ fn eval(expr: Expression) -> Result<Expression, ~str> {
                         vals.push(val.unwrap());
                     }
                 }
-                */
+                Err(~"not implemented")
+            }
+
         }
     }
 }
