@@ -1,3 +1,3 @@
-# Curlicues
+# Radicle
 
-A basic Lisp interpreter written in Rust.
+A Lisp interpreter written in Rust. It follows Paul Graham's "Roots of Lisp".
