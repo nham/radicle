@@ -7,19 +7,26 @@ use Atom = tree::Leaf;
 use List = tree::Branch;
 
 fn main() {
+/*
     read_eval("5678)");
     println!("-----------");
     read_eval("wonky");
     println!("-----------");
     read_eval("(quote 55)");
     println!("-----------");
-/*
     read_eval("( 559294 x 79% ()  )", &env);
     println!("-----------");
     read_eval("(gub (middle) end)", &env);
     println!("-----------");
     read_eval("(one 2)", &env);
     */
+
+    read_eval("(quote x)");
+    read_eval("(atom x)");
+    read_eval("(atom 1)");
+    read_eval("(atom ())");
+    read_eval("(atom (my little pony))");
+    read_eval("(atom (quote x))");
 
 }
 
@@ -28,6 +35,7 @@ fn read_eval(s: &str) {
     println!("input: {}", s);
     let parsed = read(s);
     if parsed.is_ok() {
+        println!("Parsed: {}", parsed);
         match eval(parsed.unwrap()) {
             Ok(x) => { println!("evaled: {}", x); },
             Err(x) => { println!("Eval error: {}", x); }
@@ -35,6 +43,7 @@ fn read_eval(s: &str) {
     } else {
         println!("Parse error: {}", parsed.unwrap_err());
     }
+    println!("-----------");
 }
 
 
@@ -169,14 +178,14 @@ fn eval(expr: Expression) -> Result<Expression, &str> {
 
             match op_type {
                 Op_Quote => {
-                    if vec.len() != 1 {
+                    if vec.len() != 2 {
                         Err("`quote` expects exactly one argument.")
                     } else {
                         Ok( vec[1] )
                     }
                 },
                 Op_Atom => {
-                    if vec.len() != 1 {
+                    if vec.len() != 2 {
                         Err("`atom` expects exactly one argument.")
                     } else {
                         if vec[1].is_atom() || vec[1].eq(&empty) {
@@ -187,7 +196,7 @@ fn eval(expr: Expression) -> Result<Expression, &str> {
                     }
                 },
                 Op_Eq => {
-                    if vec.len() != 2 {
+                    if vec.len() != 3 {
                         Err("`eq` expects exactly two arguments.")
                     } else {
                         if (vec[1].eq(&empty) && vec[2].eq(&empty))
@@ -199,7 +208,7 @@ fn eval(expr: Expression) -> Result<Expression, &str> {
                     }
                 },
                 Op_Car => {
-                    if vec.len() != 1 {
+                    if vec.len() != 2 {
                         Err("`car` expects exactly one argument.")
                     } else {
                         if vec[1].is_list() && !vec[1].eq(&empty) {
@@ -244,7 +253,7 @@ fn eval(expr: Expression) -> Result<Expression, &str> {
 mod tree {
     use std::fmt::{Default, Formatter};
 
-    #[deriving(Eq)]
+    #[deriving(Eq, Clone)]
     pub enum Tree<T> {
         Leaf(T),
         Branch(~[Tree<T>])
