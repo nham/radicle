@@ -20,18 +20,22 @@ fn main() {
         Err(x) => { println!("{}", x); }
     }
 
+    println!("{}", Branch(~[Leaf(~"gub"), 
+                            Branch(~[Leaf(~"middle")]),
+                            Leaf(~"end")]));
+
     parsed = read("(gub (middle) end)");
     match parsed {
         Ok(x) => { println!("{}", x); },
         Err(x) => { println!("{}", x); }
     }
 
-}
-
-fn print_tokens(mut v: TokenStream) {
-    for e in v {
-        println!(".{}.", e);
+    parsed = read("(one 2");
+    match parsed {
+        Ok(x) => { println!("{}", x); },
+        Err(x) => { println!("{}", x); }
     }
+
 }
 
 type Expression = Tree<Atom>;
