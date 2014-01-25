@@ -3,6 +3,7 @@ use std::vec::MoveItems;
 use std::iter::Peekable;
 
 use std::fmt::{Default, Formatter};
+use std::from_str::from_str;
 
 fn main() {
 
@@ -33,7 +34,7 @@ fn print_tokens(mut v: TokenStream) {
     }
 }
 
-type Expression = Tree<~str>;
+type Expression = Tree<Atom>;
 
 enum Tree<T> {
     Leaf(T),
@@ -63,6 +64,23 @@ impl<T: Default> Default for ~[Tree<T>] {
 }
 
 type TokenStream = Peekable<~str, MoveItems<~str>>;
+
+
+enum Atom {
+    Symbol(~str),
+    Number(f64)
+}
+
+impl Default for Atom {
+    fn fmt(a: &Atom, f: &mut Formatter) {
+        match *a {
+            Symbol(ref sym) => write!(f.buf, "{}", *sym),
+            Number(num) => write!(f.buf, "{}", num)
+        }
+
+    }
+}
+
 
 fn read(s: &str) -> Result<Expression, &str> {
     let mut stream = tokenize(s);
@@ -121,7 +139,13 @@ fn read_from(v: &mut TokenStream) -> Result<Expression, &str> {
             } else if ")".equiv(&s) {
                 Err("Unexpected ')'")
             } else {
-                Ok( Leaf(s) )
+                let x = from_str::<f64>(s);
+
+                if x.is_some() {
+                    Ok( Leaf(Number(x.unwrap())) )
+                } else {
+                    Ok( Leaf(Symbol(s)) )
+                }
             }
     }
 }
