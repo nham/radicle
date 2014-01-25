@@ -23,6 +23,9 @@ fn main() {
     read_eval("(cdr (quote (10 5 9)))");
     read_eval("(cons (quote 7) (quote (10 5 9)))");
     read_eval("(cons (quote 7) (quote ()))");
+    read_eval("(car (cdr (quote (1 t 3))))");
+    read_eval("(cond ((quote f) 7) ((quote foo) 8) ((quote t) (quote 9)))");
+    read_eval("(cond ((quote (1 t 3)) 7) ((car (quote (1 t 3))) 8) ((car (cdr (quote (1 t 3)))) (quote (a b c))))");
 
 }
 
@@ -226,7 +229,34 @@ fn eval(expr: Expression) -> Result<Expression, ~str> {
                     }
                 }
             } else if is_primitive_op("cond", &vec[0]) {
-                Err(~"not implemented")
+                let mut i = 1;
+                while i < vec.len() {
+                    if !vec[i].is_list() {
+                        return Err(~"Invalid argument to `cond`");
+                    } 
+
+                    let arg = vec[i].clone();
+                    let list = arg.unwrap_branch();
+                    
+                    if list.len() != 2 {
+                        return Err(~"Invalid argument to `cond`");
+                    } else {
+                        let res = eval(list[0].clone());
+                        if res.is_err() {
+                            return res;
+                        } else {
+                            let val = res.unwrap();
+
+                            if val.eq(&t) {
+                                return eval(list[1]);
+                            }
+                        }
+                    }
+
+                    i += 1;
+                }
+
+                Err(~"No branch of `cond` evaluated to true. Don't think this is an error, though. Need to decide how to handle.")
             } else {
                 let mut vals: ~[Expression] = ~[];
                 for n in vec.move_iter() {
