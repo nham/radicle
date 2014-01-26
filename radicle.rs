@@ -40,6 +40,32 @@ fn main() {
                              (cons y 
                                    (quote ()))))) 
    (quote 5)) (quote 6))", &globenv);
+    read_eval(
+"((label ZABBA (lambda (x) (cons x (quote (ab cd)))))
+  (quote CONSME))", &globenv);
+
+    read_eval(
+"((label ZABBA (lambda (x y z) (cons y (cons z (cons x (quote (batman)))))))
+  (quote CONSME) (quote santa) (car (quote (10 20 30))))", &globenv);
+
+    read_eval(
+"((label map (lambda (f xs) (cons (f (car xs)) 
+                                 (map f (cdr xs)))))
+  (lambda (x) (cons x (quote (y z)))) 
+  ((quote a) (quote b) (quote c)))",
+&globenv);
+    // result should be ((a y z) (b y z) (c y z))
+
+    /*
+    read_eval(
+"((label subst (lambda (x y z)
+                (cond ((atom z)
+                       (cond ((eq z y) x)
+                             ((quote t) z)))
+                      ((quote t) (cons (subst x y (car z))
+                                       (subst x y (cdr z)))))))
+ (quote m) (quote b) (quote (a b (a b c) d)))", &globenv);
+ */
 
 }
 
@@ -338,7 +364,10 @@ pub fn eval<'a>(expr: Expression, env: &'a Environment<'a>) -> Result<Expression
                 // the reason we need to distinguish is that we must not evaluate
                 // the op in the first case, since (lambda (p1 ... pn) body) does
                 // not evaluate to anything, according to PG?
-                if !is_lambda_literal(&op_expr) {
+                //
+                // ditto for the label literals. we package both of these together
+                // in is_func_literal()
+                if !is_func_literal(&op_expr) {
                     let res = eval(op_expr, env);
 
                     if res.is_err() {
@@ -346,14 +375,35 @@ pub fn eval<'a>(expr: Expression, env: &'a Environment<'a>) -> Result<Expression
                     } else {
                         op_expr = res.unwrap();
 
-                        if !is_lambda_literal(&op_expr) {
+                        if !is_func_literal(&op_expr) {
                             return Err(~"Unrecognized expression.");
                         }
                     }
                 }
 
-                // If we've made it here, op_expr is a lambda literal.
-                let lambda: ~[Expression] = op_expr.unwrap_branch();
+                // If we've made it here, op_expr is either a label or lambda literal
+                let lambda: ~[Expression];
+
+                // the next two are only used if its a label
+                let label_expr: Option<Expression>;
+                let func_sym: Option<~str>;
+
+                if is_label_literal(&op_expr) {
+                    label_expr = Some(op_expr.clone());
+
+                    let label = op_expr.unwrap_branch();
+                    let mut label_iter = label.move_iter();
+                    label_iter.next(); //discard "label" symbol
+
+                    func_sym = Some(label_iter.next().unwrap().unwrap_leaf());
+
+                    lambda = label_iter.next().unwrap().unwrap_branch();
+                } else {
+                    lambda = op_expr.unwrap_branch();
+                    label_expr = None;
+                    func_sym = None;
+                }
+
 
                 let mut lambda_iter = lambda.move_iter();
                 lambda_iter.next(); // discard "lambda" symbol, not needed
@@ -362,11 +412,16 @@ pub fn eval<'a>(expr: Expression, env: &'a Environment<'a>) -> Result<Expression
                 let params: ~[Expression] = lambda_iter.next().unwrap().unwrap_branch();
                 let lambda_body: Expression = lambda_iter.next().unwrap();
 
+
                 if params.len() != num_args {
                     return Err(~"mismatch between number of procedure args and number of args called with.");
                 }
 
                 let mut bindings = HashMap::<~str, Expression>::new();
+
+                if func_sym.is_some() {
+                    bindings.insert(func_sym.unwrap(), label_expr.unwrap());
+                }
 
                 // iterate through remaining elements in vec_iter
                 // for each element, evaluate it. if we get an error,
@@ -387,13 +442,19 @@ pub fn eval<'a>(expr: Expression, env: &'a Environment<'a>) -> Result<Expression
 
                 }
 
+
                 let new_env = Environment { parent: Some(env), 
                                             bindings: bindings };
 
-                return eval(lambda_body, &new_env);
+                eval(lambda_body, &new_env)
+
             }
         }
     }
+}
+
+fn is_func_literal(expr: &Expression) -> bool {
+    is_lambda_literal(expr) || is_label_literal(expr)
 }
 
 fn is_lambda_literal(expr: &Expression) -> bool {
@@ -415,6 +476,23 @@ fn is_lambda_literal(expr: &Expression) -> bool {
         if !p.is_atom() {
             return false;
         }
+    }
+
+    true
+}
+
+fn is_label_literal(expr: &Expression) -> bool {
+    if !expr.is_list() {
+        return false;
+    }
+
+    let vec = expr.get_ref_branch();
+
+    if vec.len() != 3 
+       || !vec[1].is_atom() 
+       || !is_symbol("label", &vec[0]) 
+       || !is_lambda_literal(&vec[2]) {
+        return false;
     }
 
     true
