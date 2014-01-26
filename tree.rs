@@ -32,10 +32,17 @@ impl<T> Tree<T> {
         }
     }
 
+    pub fn unwrap_leaf(self) -> T {
+        match self {
+            Leaf(val) => val,
+            _         => fail!("called Tree<T>::unwrap_leaf() on Branch()"),
+        }
+    }
+
     pub fn unwrap_branch(self) -> ~[Tree<T>] {
         match self {
             Branch(val) => val,
-            _         => fail!("called Tree<T>::unwrap_branch() on Branch()"),
+            _         => fail!("called Tree<T>::unwrap_branch() on Leaf()"),
         }
     }
 
