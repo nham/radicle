@@ -1,3 +1,8 @@
+#[crate_id = "radicle"];
+
+//! A lisp interpreter.
+
+
 use std::char::is_whitespace;
 use std::vec::MoveItems;
 use std::iter::Peekable;
@@ -6,7 +11,8 @@ use tree::Tree;
 use Atom = tree::Leaf;
 use List = tree::Branch;
 
-mod tree;
+
+pub mod tree;
 
 fn main() {
     read_eval("(quote x)");
@@ -28,7 +34,8 @@ fn main() {
 }
 
 
-fn read_eval(s: &str) {
+/// A convenience function that calls read & eval and displays their results
+pub fn read_eval(s: &str) {
     println!("input: {}", s);
     let parsed = read(s);
     if parsed.is_ok() {
@@ -44,10 +51,14 @@ fn read_eval(s: &str) {
 }
 
 
-type TokenStream = Peekable<~str, MoveItems<~str>>;
+/// Intermediate representation after tokenization and before it gets read into
+/// and expression.
+pub type TokenStream = Peekable<~str, MoveItems<~str>>;
 
-type Expression = Tree<~str>;
+/// The representation of Lisp expressions
+pub type Expression = Tree<~str>;
 
+/// Wrapping the standard Tree methods for aesthetic reasons, I guess
 impl ::tree::Tree<~str> {
     fn is_atom(&self) -> bool {
         self.is_leaf()
@@ -59,7 +70,8 @@ impl ::tree::Tree<~str> {
 }
 
 
-fn read(s: &str) -> Result<Expression, &str> {
+/// Reads a string of symbols into an expression (or possibly an error message)
+pub fn read(s: &str) -> Result<Expression, &str> {
     let mut stream = tokenize(s);
     let x = read_from(&mut stream);
 
@@ -72,8 +84,9 @@ fn read(s: &str) -> Result<Expression, &str> {
 }
 
 
-// assumes that tokens do not have whitespace or parens in them
-fn tokenize(s: &str) -> TokenStream {
+/// Turns a string into a stream of tokens. Currently assumes that tokens
+/// do not have spaces or parens in them.
+pub fn tokenize(s: &str) -> TokenStream {
     let s1 = s.replace("(", " ( ").replace(")", " ) ");
 
     let x: ~[&str] = s1.split(|c: char| is_whitespace(c)).collect();
@@ -88,7 +101,9 @@ fn tokenize(s: &str) -> TokenStream {
     ret.move_iter().peekable()
 }
 
-fn read_from(v: &mut TokenStream) -> Result<Expression, &str> {
+/// Attempts to read an entire expression from the token stream. Detects
+/// mismatched parentheses.
+pub fn read_from(v: &mut TokenStream) -> Result<Expression, &str> {
     let tok = v.next();
     match tok {
         None        => Err("Unexpected end of token stream"),
@@ -122,7 +137,8 @@ fn read_from(v: &mut TokenStream) -> Result<Expression, &str> {
 }
 
 
-fn eval(expr: Expression) -> Result<Expression, ~str> {
+/// The heart and soul of Radicle.
+pub fn eval(expr: Expression) -> Result<Expression, ~str> {
     match expr {
         Atom(_) => Err(~"Symbol evaluation is unimplemented"),
         List([]) => Err(~"No procedure to call. TODO: a better error message?"),
@@ -287,16 +303,16 @@ fn is_primitive_op(op: &str, expr: &Expression) -> bool {
 }
 
 
-// a bind for the Result<T, ~str> monad
-fn result_bind<S, T>(v: Result<S, ~str>, f: |S| -> Result<T, ~str>) -> Result<T, ~str> {
+/// A bind for the Result<T, ~str> monad.
+pub fn result_bind<S, T>(v: Result<S, ~str>, f: |S| -> Result<T, ~str>) -> Result<T, ~str> {
     match v {
         Err(s) => Err(s),
         Ok(x) => f(x),
     }
 }
 
-// we needed more applicative functors
-fn result_fmap2<S, T, U>(v1: Result<S, ~str>, 
+/// Fmap2 for the Result<T, ~str> monad. Used in a couple places in eval()
+pub fn result_fmap2<S, T, U>(v1: Result<S, ~str>, 
                          v2: Result<T, ~str>, 
                          f: |S, T| -> Result<U, ~str>) -> Result<U, ~str> {
     match v1 {
