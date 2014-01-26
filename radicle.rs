@@ -158,24 +158,20 @@ fn eval(expr: Expression) -> Result<Expression, ~str> {
 
             } else if is_primitive_op("eq", &vec[0]) {
 
+                let eval_eq = |val1: Expression, val2: Expression| 
+                              -> Result<Expression, ~str> {
+                    if (val1.eq(&empty) && val2.eq(&empty))
+                       || (val1.is_atom() && val2.is_atom() && val1.eq(&val2)) {
+                        Ok( t.clone() )
+                    } else {
+                        Ok( empty.clone() )
+                    }
+                };
+
                 if vec.len() != 3 {
                     Err(~"`eq` expects exactly two arguments.")
                 } else {
-                    let res1 = eval(vec[1].clone());
-                    let res2 = eval(vec[2]);
-                    if res1.is_err() {
-                        res1
-                    } else if res2.is_err() {
-                        res2
-                    } else {
-                        let (val1, val2) = (res1.unwrap(), res2.unwrap());
-                        if (val1.eq(&empty) && val2.eq(&empty))
-                           || (val1.is_atom() && val2.is_atom() && val1.eq(&val2)) {
-                            Ok( t )
-                        } else {
-                            Ok( empty )
-                        }
-                    }
+                    result_fmap2(eval(vec[1].clone()), eval(vec[2]), eval_eq)
                 }
 
             } else if is_primitive_op("car", &vec[0]) {
@@ -215,25 +211,21 @@ fn eval(expr: Expression) -> Result<Expression, ~str> {
 
             } else if is_primitive_op("cons", &vec[0]) {
 
+                let eval_cons = |val1: Expression, val2: Expression| 
+                              -> Result<Expression, ~str> {
+                    if val2.is_list() {
+                        let mut list = val2.unwrap_branch();
+                        list.unshift(val1);
+                        Ok( List(list) )
+                    } else {
+                        Err(~"`cons`'s second argument must be a list")
+                    }
+                };
+
                 if vec.len() != 3 {
                     Err(~"`cons` expects exactly two arguments.")
                 } else {
-                    let res1 = eval(vec[1].clone());
-                    let res2 = eval(vec[2]);
-                    if res1.is_err() {
-                        res1
-                    } else if res2.is_err() {
-                        res2
-                    } else {
-                        let (val1, val2) = (res1.unwrap(), res2.unwrap());
-                        if val2.is_list() {
-                            let mut list = val2.unwrap_branch();
-                            list.unshift(val1);
-                            Ok( List(list) )
-                        } else {
-                            Err(~"`cons`'s second argument must be a list")
-                        }
-                    }
+                    result_fmap2(eval(vec[1].clone()), eval(vec[2]), eval_cons)
                 }
 
             } else if is_primitive_op("cond", &vec[0]) {
@@ -302,5 +294,19 @@ fn result_bind<S, T>(v: Result<S, ~str>, f: |S| -> Result<T, ~str>) -> Result<T,
     match v {
         Err(s) => Err(s),
         Ok(x) => f(x),
+    }
+}
+
+// we needed more applicative functors
+fn result_fmap2<S, T, U>(v1: Result<S, ~str>, 
+                         v2: Result<T, ~str>, 
+                         f: |S, T| -> Result<U, ~str>) -> Result<U, ~str> {
+    match v1 {
+        Err(s) => Err(s),
+        Ok(x) => 
+            match v2 {
+                Err(s) => Err(s),
+                Ok(y) => f(x, y),
+            }
     }
 }
