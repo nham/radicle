@@ -393,21 +393,6 @@ pub fn eval<'a>(expr: Expression, env: &'a Environment<'a>) -> Result<Expression
                         return eval(lambda_body, &new_env);
                     }
                 }
-
-                    /*
-                let mut vals: ~[Expression] = ~[];
-                for n in vec.move_iter() {
-                    let val = eval(n);
-
-                    if val.is_err() {
-                        return val;
-                    } else {
-                        vals.push(val.unwrap());
-                    }
-                }
-                */
-
-
             }
         }
     }
