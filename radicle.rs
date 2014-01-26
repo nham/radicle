@@ -195,7 +195,7 @@ pub fn eval<'a>(expr: Expression, env: &'a Environment<'a>) -> Result<Expression
             let t = Atom(~"t");
             let empty: Expression = List(~[]);
 
-            if is_primitive_op("quote", &vec[0]) {
+            if is_symbol("quote", &vec[0]) {
 
                 if vec.len() != 2 {
                     Err(~"`quote` expects exactly one argument.")
@@ -203,7 +203,7 @@ pub fn eval<'a>(expr: Expression, env: &'a Environment<'a>) -> Result<Expression
                     Ok( vec[1] )
                 }
 
-            } else if is_primitive_op("atom", &vec[0]) {
+            } else if is_symbol("atom", &vec[0]) {
 
                 let eval_atom = |val: Expression| -> Result<Expression, ~str> {
                     if val.is_atom() || val.eq(&empty) {
@@ -219,7 +219,7 @@ pub fn eval<'a>(expr: Expression, env: &'a Environment<'a>) -> Result<Expression
                     result_bind(eval(vec[1], env), eval_atom)
                 }
 
-            } else if is_primitive_op("eq", &vec[0]) {
+            } else if is_symbol("eq", &vec[0]) {
 
                 let eval_eq = |val1: Expression, val2: Expression| 
                               -> Result<Expression, ~str> {
@@ -237,7 +237,7 @@ pub fn eval<'a>(expr: Expression, env: &'a Environment<'a>) -> Result<Expression
                     result_fmap2(eval(vec[1].clone(), env), eval(vec[2], env), eval_eq)
                 }
 
-            } else if is_primitive_op("car", &vec[0]) {
+            } else if is_symbol("car", &vec[0]) {
 
                 let eval_car = |val: Expression| -> Result<Expression, ~str> {
                     if val.is_list() && !val.eq(&empty) {
@@ -254,7 +254,7 @@ pub fn eval<'a>(expr: Expression, env: &'a Environment<'a>) -> Result<Expression
                     result_bind(eval(vec[1], env), eval_car)
                 }
 
-            } else if is_primitive_op("cdr", &vec[0]) {
+            } else if is_symbol("cdr", &vec[0]) {
 
                 let eval_cdr = |val: Expression| -> Result<Expression, ~str> {
                     if val.is_list() && !val.eq(&empty) {
@@ -272,7 +272,7 @@ pub fn eval<'a>(expr: Expression, env: &'a Environment<'a>) -> Result<Expression
                     result_bind(eval(vec[1], env), eval_cdr)
                 }
 
-            } else if is_primitive_op("cons", &vec[0]) {
+            } else if is_symbol("cons", &vec[0]) {
 
                 let eval_cons = |val1: Expression, val2: Expression| 
                               -> Result<Expression, ~str> {
@@ -291,7 +291,7 @@ pub fn eval<'a>(expr: Expression, env: &'a Environment<'a>) -> Result<Expression
                     result_fmap2(eval(vec[1].clone(), env), eval(vec[2], env), eval_cons)
                 }
 
-            } else if is_primitive_op("cond", &vec[0]) {
+            } else if is_symbol("cond", &vec[0]) {
 
                 let mut i = 1;
                 while i < vec.len() {
@@ -405,7 +405,7 @@ fn is_lambda_literal(expr: &Expression) -> bool {
 
     if vec.len() != 3 
        || !vec[1].is_list() 
-       || !is_primitive_op("lambda", &vec[0]) {
+       || !is_symbol("lambda", &vec[0]) {
         return false;
     }
 
@@ -420,7 +420,7 @@ fn is_lambda_literal(expr: &Expression) -> bool {
     true
 }
 
-fn is_primitive_op(op: &str, expr: &Expression) -> bool {
+fn is_symbol(op: &str, expr: &Expression) -> bool {
     if expr.is_atom() {
         let expr_op = expr.get_ref_leaf();
         op.equiv(expr_op)
