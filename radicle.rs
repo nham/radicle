@@ -322,80 +322,102 @@ pub fn eval<'a>(expr: Expression, env: &'a Environment<'a>) -> Result<Expression
 
                 Err(~"No branch of `cond` evaluated to true. Don't think this is an error, though. Need to decide how to handle.")
 
-            } else if is_primitive_op("lambda", &vec[0]) {
-
-                if vec.len() != 3 {
-                    Err(~"`lambda` expects exactly two arguments.")
-                } else {
-                    Ok( List(vec) )
-                }
-
             } else {
 
                 let num_args = vec.len() - 1;
 
                 let mut vec_iter = vec.move_iter();
-                let op_expr = vec_iter.next().unwrap();
+                let mut op_expr = vec_iter.next().unwrap();
 
-                let res = eval(op_expr, env);
+                // we need to distinguish between "literal" lambda calls, where
+                // the first op literally matches the lambda pattern
+                //     (lambda (p1 ... pn) body)
+                // and the case where the op expression is something that evaluates
+                // to the literal lambda pattern.
+                //
+                // the reason we need to distinguish is that we must not evaluate
+                // the op in the first case, since (lambda (p1 ... pn) body) does
+                // not evaluate to anything, according to PG?
+                if !is_lambda_literal(&op_expr) {
+                    let res = eval(op_expr, env);
 
-                if res.is_err() {
-                    return res;
-                } else {
-                    let val = res.unwrap();
-                    if !val.is_list() {
-                        Err(~"`lambda` expression is malformed")
+                    if res.is_err() {
+                        return res;
                     } else {
-                        let lambda = val.unwrap_branch();
+                        op_expr = res.unwrap();
 
-                        if lambda.len() != 3 
-                           || !lambda[1].is_list() 
-                           || !is_primitive_op("lambda", &lambda[0]) {
-                            return Err(~"`lambda` expression is malformed");
+                        if !is_lambda_literal(&op_expr) {
+                            return Err(~"Unrecognized expression.");
                         }
-
-                        let mut lambda_iter = lambda.move_iter();
-                        lambda_iter.next(); // discard "lambda" symbol, not needed
-
-                        // params is the list of formal arguments to the lambda
-                        let params: ~[Expression] = lambda_iter.next().unwrap().unwrap_branch();
-
-                        let lambda_body: Expression = lambda_iter.next().unwrap();
-
-                        if params.len() != num_args {
-                            return Err(~"mismatch between number of procedure args and number of args called with.");
-                        }
-
-                        let mut bindings = HashMap::<~str, Expression>::new();
-
-                        // iterate through remaining elements in vec_iter
-                        // for each element, evaluate it. if we get an error,
-                        // terminate and return that error.
-                        // otherwise, insert that vaue into the bindings HashMap that
-                        // we are building up and continue onto the next arg
-                        let mut param_iter = params.move_iter();
-
-                        for v in vec_iter {
-                            let res = eval(v, env);
-
-                            if res.is_err() {
-                                return res;
-                            } else {
-                                bindings.insert(param_iter.next().unwrap().unwrap_leaf(),
-                                                res.unwrap());
-                            }
-
-                        }
-
-                        let new_env = Environment { parent: Some(env), 
-                                                    bindings: bindings };
-
-                        return eval(lambda_body, &new_env);
                     }
                 }
+
+                // If we've made it here, op_expr is a lambda literal.
+                let lambda: ~[Expression] = op_expr.unwrap_branch();
+
+                let mut lambda_iter = lambda.move_iter();
+                lambda_iter.next(); // discard "lambda" symbol, not needed
+
+                // params is the list of formal arguments to the lambda
+                let params: ~[Expression] = lambda_iter.next().unwrap().unwrap_branch();
+                let lambda_body: Expression = lambda_iter.next().unwrap();
+
+                if params.len() != num_args {
+                    return Err(~"mismatch between number of procedure args and number of args called with.");
+                }
+
+                let mut bindings = HashMap::<~str, Expression>::new();
+
+                // iterate through remaining elements in vec_iter
+                // for each element, evaluate it. if we get an error,
+                // terminate and return that error.
+                // otherwise, insert that vaue into the bindings HashMap that
+                // we are building up and continue onto the next arg
+                let mut param_iter = params.move_iter();
+
+                for v in vec_iter {
+                    let res = eval(v, env);
+
+                    if res.is_err() {
+                        return res;
+                    } else {
+                        bindings.insert(param_iter.next().unwrap().unwrap_leaf(),
+                                        res.unwrap());
+                    }
+
+                }
+
+                let new_env = Environment { parent: Some(env), 
+                                            bindings: bindings };
+
+                return eval(lambda_body, &new_env);
             }
         }
     }
+}
+
+fn is_lambda_literal(expr: &Expression) -> bool {
+    if !expr.is_list() {
+        return false;
+    }
+
+    let vec = expr.get_ref_branch();
+
+    if vec.len() != 3 
+       || !vec[1].is_list() 
+       || !is_primitive_op("lambda", &vec[0]) {
+        return false;
+    }
+
+    let params = vec[1].get_ref_branch();
+
+    for p in params.iter() {
+        if !p.is_atom() {
+            return false;
+        }
+    }
+
+    true
 }
 
 fn is_primitive_op(op: &str, expr: &Expression) -> bool {
