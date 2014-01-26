@@ -7,6 +7,7 @@ use std::char::is_whitespace;
 use std::vec::MoveItems;
 use std::iter::Peekable;
 
+use std::hashmap::HashMap;
 use tree::Tree;
 use Atom = tree::Leaf;
 use List = tree::Branch;
@@ -15,32 +16,33 @@ use List = tree::Branch;
 pub mod tree;
 
 fn main() {
-    read_eval("(quote x)");
-    read_eval("(atom x)");
-    read_eval("(atom (quote x))");
-    read_eval("(atom (atom x))");
-    read_eval("(atom (quote ()))");
-    read_eval("(atom (my little pony))");
-    read_eval("(atom (quote (my little pony)))");
-    read_eval("(car (quote (10 5 9)))");
-    read_eval("(cdr (quote (10)))");
-    read_eval("(cdr (quote (10 5 9)))");
-    read_eval("(cons (quote 7) (quote (10 5 9)))");
-    read_eval("(cons (quote 7) (quote ()))");
-    read_eval("(car (cdr (quote (1 t 3))))");
-    read_eval("(cond ((quote f) 7) ((quote foo) 8) ((quote t) (quote 9)))");
-    read_eval("(cond ((quote (1 t 3)) 7) ((car (quote (1 t 3))) 8) ((car (cdr (quote (1 t 3)))) (quote (a b c))))");
+    let globenv = Environment { parent: None, bindings: HashMap::new() };
+    read_eval("(quote x)", &globenv);
+    read_eval("(atom x)", &globenv);
+    read_eval("(atom (quote x))", &globenv);
+    read_eval("(atom (atom x))", &globenv);
+    read_eval("(atom (quote ()))", &globenv);
+    read_eval("(atom (my little pony))", &globenv);
+    read_eval("(atom (quote (my little pony)))", &globenv);
+    read_eval("(car (quote (10 5 9)))", &globenv);
+    read_eval("(cdr (quote (10)))", &globenv);
+    read_eval("(cdr (quote (10 5 9)))", &globenv);
+    read_eval("(cons (quote 7) (quote (10 5 9)))", &globenv);
+    read_eval("(cons (quote 7) (quote ()))", &globenv);
+    read_eval("(car (cdr (quote (1 t 3))))", &globenv);
+    read_eval("(cond ((quote f) 7) ((quote foo) 8) ((quote t) (quote 9)))", &globenv);
+    read_eval("(cond ((quote (1 t 3)) 7) ((car (quote (1 t 3))) 8) ((car (cdr (quote (1 t 3)))) (quote (a b c))))", &globenv);
 
 }
 
 
 /// A convenience function that calls read & eval and displays their results
-pub fn read_eval(s: &str) {
+pub fn read_eval(s: &str, env: &Environment) {
     println!("input: {}", s);
     let parsed = read(s);
     if parsed.is_ok() {
         println!("Parsed: {}", parsed);
-        match eval(parsed.unwrap()) {
+        match eval(parsed.unwrap(), env) {
             Ok(x) => { println!("evaled: {}", x); },
             Err(x) => { println!("Eval error: {}", x); }
         }
@@ -57,6 +59,12 @@ pub type TokenStream = Peekable<~str, MoveItems<~str>>;
 
 /// The representation of Lisp expressions
 pub type Expression = Tree<~str>;
+
+
+struct Environment<'a> {
+    parent: Option<&'a Environment<'a>>,
+    bindings: HashMap<~str, Expression>,
+}
 
 /// Wrapping the standard Tree methods for aesthetic reasons, I guess
 impl ::tree::Tree<~str> {
@@ -138,7 +146,7 @@ pub fn read_from(v: &mut TokenStream) -> Result<Expression, &str> {
 
 
 /// The heart and soul of Radicle.
-pub fn eval(expr: Expression) -> Result<Expression, ~str> {
+pub fn eval(expr: Expression, env: &Environment) -> Result<Expression, ~str> {
     match expr {
         Atom(_) => Err(~"Symbol evaluation is unimplemented"),
         List([]) => Err(~"No procedure to call. TODO: a better error message?"),
@@ -167,7 +175,7 @@ pub fn eval(expr: Expression) -> Result<Expression, ~str> {
                 if vec.len() != 2 {
                     Err(~"`atom` expects exactly one argument.")
                 } else {
-                    result_bind(eval(vec[1]), eval_atom)
+                    result_bind(eval(vec[1], env), eval_atom)
                 }
 
             } else if is_primitive_op("eq", &vec[0]) {
@@ -185,7 +193,7 @@ pub fn eval(expr: Expression) -> Result<Expression, ~str> {
                 if vec.len() != 3 {
                     Err(~"`eq` expects exactly two arguments.")
                 } else {
-                    result_fmap2(eval(vec[1].clone()), eval(vec[2]), eval_eq)
+                    result_fmap2(eval(vec[1].clone(), env), eval(vec[2], env), eval_eq)
                 }
 
             } else if is_primitive_op("car", &vec[0]) {
@@ -202,7 +210,7 @@ pub fn eval(expr: Expression) -> Result<Expression, ~str> {
                 if vec.len() != 2 {
                     Err(~"`car` expects exactly one argument.")
                 } else {
-                    result_bind(eval(vec[1]), eval_car)
+                    result_bind(eval(vec[1], env), eval_car)
                 }
 
             } else if is_primitive_op("cdr", &vec[0]) {
@@ -220,7 +228,7 @@ pub fn eval(expr: Expression) -> Result<Expression, ~str> {
                 if vec.len() != 2 {
                     Err(~"`cdr` expects exactly one argument.")
                 } else {
-                    result_bind(eval(vec[1]), eval_cdr)
+                    result_bind(eval(vec[1], env), eval_cdr)
                 }
 
             } else if is_primitive_op("cons", &vec[0]) {
@@ -239,7 +247,7 @@ pub fn eval(expr: Expression) -> Result<Expression, ~str> {
                 if vec.len() != 3 {
                     Err(~"`cons` expects exactly two arguments.")
                 } else {
-                    result_fmap2(eval(vec[1].clone()), eval(vec[2]), eval_cons)
+                    result_fmap2(eval(vec[1].clone(), env), eval(vec[2], env), eval_cons)
                 }
 
             } else if is_primitive_op("cond", &vec[0]) {
@@ -256,14 +264,14 @@ pub fn eval(expr: Expression) -> Result<Expression, ~str> {
                     if list.len() != 2 {
                         return Err(~"Invalid argument to `cond`");
                     } else {
-                        let res = eval(list[0].clone());
+                        let res = eval(list[0].clone(), env);
                         if res.is_err() {
                             return res;
                         } else {
                             let val = res.unwrap();
 
                             if val.eq(&t) {
-                                return eval(list[1]);
+                                return eval(list[1], env);
                             }
                         }
                     }
@@ -284,7 +292,7 @@ pub fn eval(expr: Expression) -> Result<Expression, ~str> {
             } else {
 
                 let num_args = vec.len() - 1;
-                let res = eval(vec[0]);
+                let res = eval(vec[0], env);
 
                 if res.is_err() {
                     return res;
