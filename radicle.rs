@@ -75,15 +75,15 @@ pub fn read_eval(s: &str, env: &Environment) {
     println!("input: {}", s);
     let parsed = read(s);
     if parsed.is_ok() {
-        println!("Parsed: {}", parsed);
+        println!("\nParsed: {}", parsed);
         match eval(parsed.unwrap(), env) {
-            Ok(x) => { println!("evaled: {}", x); },
-            Err(x) => { println!("Eval error: {}", x); }
+            Ok(x) => { println!("\nevaled: {}", x); },
+            Err(x) => { println!("\nEval error: {}", x); }
         }
     } else {
-        println!("Parse error: {}", parsed.unwrap_err());
+        println!("\nParse error: {}", parsed.unwrap_err());
     }
-    println!("-----------");
+    println!("\n>>>>>>>>>>>>>>>>\n");
 }
 
 
