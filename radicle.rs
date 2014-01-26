@@ -11,13 +11,11 @@ mod tree;
 fn main() {
     read_eval("(quote x)");
     read_eval("(atom x)");
-    read_eval("(atom 1)");
-    read_eval("(atom 79.14159)");
+    read_eval("(atom (quote x))");
+    read_eval("(atom (atom x))");
     read_eval("(atom (quote ()))");
     read_eval("(atom (my little pony))");
     read_eval("(atom (quote (my little pony)))");
-    read_eval("(atom (quote x))");
-    read_eval("(atom (atom x))");
     read_eval("(car (quote (10 5 9)))");
     read_eval("(cdr (quote (10)))");
     read_eval("(cdr (quote (10 5 9)))");
@@ -142,18 +140,18 @@ fn eval(expr: Expression) -> Result<Expression, ~str> {
 
             } else if is_primitive_op("atom", &vec[0]) {
 
+                let eval_atom = |val: Expression| -> Result<Expression, ~str> {
+                    if val.is_atom() || val.eq(&empty) {
+                        Ok( t.clone() )
+                    } else {
+                        Ok( empty.clone() )
+                    }
+                };
+
                 if vec.len() != 2 {
                     Err(~"`atom` expects exactly one argument.")
                 } else {
-                    match eval(vec[1]) {
-                        Ok(val) =>
-                            if val.is_atom() || val.eq(&empty) {
-                                Ok( t )
-                            } else {
-                                Ok( empty )
-                            },
-                        err @ Err(_) => err,
-                    }
+                    result_bind(eval(vec[1]), eval_atom)
                 }
 
             } else if is_primitive_op("eq", &vec[0]) {
