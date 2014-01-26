@@ -35,6 +35,11 @@ fn main() {
     read_eval("((lambda (x) (cons x (quote (ab cd)))) (quote CONSME))", &globenv);
     read_eval("((lambda (x y z) (cons y (cons z (cons x (quote (batman)))))) (quote CONSME) (quote santa) (car (quote (10 20 30))))", &globenv);
     read_eval("((lambduh (x) (cons x (quote ()))) (quote CONSME))", &globenv);
+    read_eval("(((lambda (x) 
+           (lambda (y) (cons x 
+                             (cons y 
+                                   (quote ()))))) 
+   (quote 5)) (quote 6))", &globenv);
 
 }
 
@@ -72,10 +77,22 @@ struct Environment<'a> {
 impl<'a> Environment<'a> {
     fn find(&'a self, key: &~str) -> Option<&'a Expression> {
         if self.bindings.contains_key(key) {
-            self.bindings.find(key)   
+            self.bindings.find(key)
         } else {
             if self.parent.is_some() {
                 self.parent.unwrap().find(key)
+            } else {
+                None
+            }
+        }
+    }
+
+    fn find_copy(&self, key: &~str) -> Option<Expression> {
+        if self.bindings.contains_key(key) {
+            self.bindings.find_copy(key)
+        } else {
+            if self.parent.is_some() {
+                self.parent.unwrap().find_copy(key)
             } else {
                 None
             }
@@ -166,9 +183,9 @@ pub fn read_from(v: &mut TokenStream) -> Result<Expression, &str> {
 pub fn eval<'a>(expr: Expression, env: &'a Environment<'a>) -> Result<Expression, ~str> {
     match expr {
         Atom(ref s) => {
-            let res = env.bindings.find_copy(s);
+            let res = env.find_copy(s);
             if res.is_none() {
-                Err(~"Symbol not found.")
+                Err(format!("Symbol `{}` not found.", *s))
             } else {
                 Ok(res.unwrap())
             }
