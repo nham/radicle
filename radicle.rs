@@ -32,6 +32,8 @@ fn main() {
     read_eval("(car (cdr (quote (1 t 3))))", &globenv);
     read_eval("(cond ((quote f) 7) ((quote foo) 8) ((quote t) (quote 9)))", &globenv);
     read_eval("(cond ((quote (1 t 3)) 7) ((car (quote (1 t 3))) 8) ((car (cdr (quote (1 t 3)))) (quote (a b c))))", &globenv);
+    read_eval("((lambda (x) (cons x (quote (ab cd)))) (quote CONSME))", &globenv);
+    read_eval("((lambduh (x) (cons x (quote ()))) (quote CONSME))", &globenv);
 
 }
 
@@ -64,6 +66,20 @@ pub type Expression = Tree<~str>;
 struct Environment<'a> {
     parent: Option<&'a Environment<'a>>,
     bindings: HashMap<~str, Expression>,
+}
+
+impl<'a> Environment<'a> {
+    fn find(&'a self, key: &~str) -> Option<&'a Expression> {
+        if self.bindings.contains_key(key) {
+            self.bindings.find(key)   
+        } else {
+            if self.parent.is_some() {
+                self.parent.unwrap().find(key)
+            } else {
+                None
+            }
+        }
+    }
 }
 
 /// Wrapping the standard Tree methods for aesthetic reasons, I guess
@@ -146,9 +162,16 @@ pub fn read_from(v: &mut TokenStream) -> Result<Expression, &str> {
 
 
 /// The heart and soul of Radicle.
-pub fn eval(expr: Expression, env: &Environment) -> Result<Expression, ~str> {
+pub fn eval<'a>(expr: Expression, env: &'a Environment<'a>) -> Result<Expression, ~str> {
     match expr {
-        Atom(_) => Err(~"Symbol evaluation is unimplemented"),
+        Atom(ref s) => {
+            let res = env.bindings.find_copy(s);
+            if res.is_none() {
+                Err(~"Symbol not found.")
+            } else {
+                Ok(res.unwrap())
+            }
+        },
         List([]) => Err(~"No procedure to call. TODO: a better error message?"),
         List(vec) => {
             let t = Atom(~"t");
@@ -292,7 +315,17 @@ pub fn eval(expr: Expression, env: &Environment) -> Result<Expression, ~str> {
             } else {
 
                 let num_args = vec.len() - 1;
-                let res = eval(vec[0], env);
+
+                let mut vec_iter = vec.move_iter();
+                let op_expr = vec_iter.next().unwrap();
+
+                let mut arg_exprs: ~[Expression] = ~[];
+
+                for v in vec_iter {
+                    arg_exprs.push(v);
+                }
+
+                let res = eval(op_expr, env);
 
                 if res.is_err() {
                     return res;
@@ -303,16 +336,42 @@ pub fn eval(expr: Expression, env: &Environment) -> Result<Expression, ~str> {
                     } else {
                         let lambda = val.unwrap_branch();
 
-                        if lambda.len() != 3 || !lambda[1].is_list() {
+                        if lambda.len() != 3 
+                           || !lambda[1].is_list() 
+                           || !is_primitive_op("lambda", &lambda[0]) {
                             return Err(~"`lambda` expression is malformed");
                         }
 
-                        let params = lambda[1].unwrap_branch();
+                        let mut lambda_iter = lambda.move_iter();
+                        lambda_iter.next(); // discard "lambda" symbol, not needed
+
+                        // params is the list of formal arguments to the lambda
+                        let params: ~[Expression] = lambda_iter.next().unwrap().unwrap_branch();
+
+                        let lambda_body: Expression = lambda_iter.next().unwrap();
+
                         if params.len() != num_args {
                             return Err(~"mismatch between number of procedure args and number of args called with.");
                         }
 
-                        Err(~"not implemented")
+                        // now evaluate each argument and bind the result under the
+                        // parameter. then evaluate the lambda body with the new
+                        // environment
+                        let mut bindings = HashMap::<~str, Expression>::new();
+
+                        let res = eval(arg_exprs[0], env);
+
+                        if res.is_err() {
+                            return res;
+                        } else {
+                            bindings.insert(params[0].unwrap_leaf(), 
+                                            res.unwrap());
+
+                            let new_env = Environment { parent: Some(env), 
+                                                        bindings: bindings };
+
+                            return eval(lambda_body, &new_env);
+                        }
                     }
                 }
 
