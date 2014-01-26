@@ -49,10 +49,11 @@ fn main() {
   (quote CONSME) (quote santa) (car (quote (10 20 30))))", &globenv);
 
     read_eval(
-"((label map (lambda (f xs) (cons (f (car xs)) 
-                                 (map f (cdr xs)))))
-  (lambda (x) (cons x (quote (y z)))) 
-  ((quote a) (quote b) (quote c)))",
+"((label map (lambda (f xs) (cond ((atom xs) xs)
+                                  ((quote t) (cons (f (car xs)) 
+                                 (map f (cdr xs)))))))
+  (quote (lambda (x) (cons x (quote (y z)))))
+  (quote (a b c)))",
 &globenv);
     // result should be ((a y z) (b y z) (c y z))
 
@@ -207,6 +208,7 @@ pub fn read_from(v: &mut TokenStream) -> Result<Expression, &str> {
 
 /// The heart and soul of Radicle.
 pub fn eval<'a>(expr: Expression, env: &'a Environment<'a>) -> Result<Expression, ~str> {
+    debug!("\n :: Entered eval, expr = \n{}\n", expr);
     match expr {
         Atom(ref s) => {
             let res = env.find_copy(s);
@@ -405,12 +407,16 @@ pub fn eval<'a>(expr: Expression, env: &'a Environment<'a>) -> Result<Expression
                 }
 
 
+                debug!("\n :: lambda =\n{}", lambda);
                 let mut lambda_iter = lambda.move_iter();
                 lambda_iter.next(); // discard "lambda" symbol, not needed
 
                 // params is the list of formal arguments to the lambda
                 let params: ~[Expression] = lambda_iter.next().unwrap().unwrap_branch();
                 let lambda_body: Expression = lambda_iter.next().unwrap();
+
+                debug!("\n :: params =\n{}", params);
+                debug!("\n :: lambda_body =\n{}", lambda_body);
 
 
                 if params.len() != num_args {
@@ -430,7 +436,9 @@ pub fn eval<'a>(expr: Expression, env: &'a Environment<'a>) -> Result<Expression
                 // we are building up and continue onto the next arg
                 let mut param_iter = params.move_iter();
 
+                debug!("\n :: iterating through args now and passing them into bindings\n");
                 for v in vec_iter {
+                    debug!("  -- {}", v);
                     let res = eval(v, env);
 
                     if res.is_err() {
@@ -446,6 +454,7 @@ pub fn eval<'a>(expr: Expression, env: &'a Environment<'a>) -> Result<Expression
                 let new_env = Environment { parent: Some(env), 
                                             bindings: bindings };
 
+                debug!("\n :: arguments have been passed into environment, evaling lambda body\n");
                 eval(lambda_body, &new_env)
 
             }
