@@ -273,8 +273,42 @@ pub fn eval(expr: Expression) -> Result<Expression, ~str> {
 
                 Err(~"No branch of `cond` evaluated to true. Don't think this is an error, though. Need to decide how to handle.")
 
+            } else if is_primitive_op("lambda", &vec[0]) {
+
+                if vec.len() != 3 {
+                    Err(~"`lambda` expects exactly two arguments.")
+                } else {
+                    Ok( List(vec) )
+                }
+
             } else {
 
+                let num_args = vec.len() - 1;
+                let res = eval(vec[0]);
+
+                if res.is_err() {
+                    return res;
+                } else {
+                    let val = res.unwrap();
+                    if !val.is_list() {
+                        Err(~"`lambda` expression is malformed")
+                    } else {
+                        let lambda = val.unwrap_branch();
+
+                        if lambda.len() != 3 || !lambda[1].is_list() {
+                            return Err(~"`lambda` expression is malformed");
+                        }
+
+                        let params = lambda[1].unwrap_branch();
+                        if params.len() != num_args {
+                            return Err(~"mismatch between number of procedure args and number of args called with.");
+                        }
+
+                        Err(~"not implemented")
+                    }
+                }
+
+                    /*
                 let mut vals: ~[Expression] = ~[];
                 for n in vec.move_iter() {
                     let val = eval(n);
@@ -285,10 +319,10 @@ pub fn eval(expr: Expression) -> Result<Expression, ~str> {
                         vals.push(val.unwrap());
                     }
                 }
-                Err(~"not implemented")
+                */
+
 
             }
-
         }
     }
 }
