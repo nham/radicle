@@ -57,7 +57,6 @@ fn main() {
 &globenv);
     // result should be ((a y z) (b y z) (c y z))
 
-    /*
     read_eval(
 "((label subst (lambda (x y z)
                 (cond ((atom z)
@@ -66,7 +65,6 @@ fn main() {
                       ((quote t) (cons (subst x y (car z))
                                        (subst x y (cdr z)))))))
  (quote m) (quote b) (quote (a b (a b c) d)))", &globenv);
- */
 
 }
 
