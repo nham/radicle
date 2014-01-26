@@ -33,6 +33,7 @@ fn main() {
     read_eval("(cond ((quote f) 7) ((quote foo) 8) ((quote t) (quote 9)))", &globenv);
     read_eval("(cond ((quote (1 t 3)) 7) ((car (quote (1 t 3))) 8) ((car (cdr (quote (1 t 3)))) (quote (a b c))))", &globenv);
     read_eval("((lambda (x) (cons x (quote (ab cd)))) (quote CONSME))", &globenv);
+    read_eval("((lambda (x y z) (cons y (cons z (cons x (quote (batman)))))) (quote CONSME) (quote santa) (car (quote (10 20 30))))", &globenv);
     read_eval("((lambduh (x) (cons x (quote ()))) (quote CONSME))", &globenv);
 
 }
@@ -319,12 +320,6 @@ pub fn eval<'a>(expr: Expression, env: &'a Environment<'a>) -> Result<Expression
                 let mut vec_iter = vec.move_iter();
                 let op_expr = vec_iter.next().unwrap();
 
-                let mut arg_exprs: ~[Expression] = ~[];
-
-                for v in vec_iter {
-                    arg_exprs.push(v);
-                }
-
                 let res = eval(op_expr, env);
 
                 if res.is_err() {
@@ -354,24 +349,31 @@ pub fn eval<'a>(expr: Expression, env: &'a Environment<'a>) -> Result<Expression
                             return Err(~"mismatch between number of procedure args and number of args called with.");
                         }
 
-                        // now evaluate each argument and bind the result under the
-                        // parameter. then evaluate the lambda body with the new
-                        // environment
                         let mut bindings = HashMap::<~str, Expression>::new();
 
-                        let res = eval(arg_exprs[0], env);
+                        // iterate through remaining elements in vec_iter
+                        // for each element, evaluate it. if we get an error,
+                        // terminate and return that error.
+                        // otherwise, insert that vaue into the bindings HashMap that
+                        // we are building up and continue onto the next arg
+                        let mut param_iter = params.move_iter();
 
-                        if res.is_err() {
-                            return res;
-                        } else {
-                            bindings.insert(params[0].unwrap_leaf(), 
-                                            res.unwrap());
+                        for v in vec_iter {
+                            let res = eval(v, env);
 
-                            let new_env = Environment { parent: Some(env), 
-                                                        bindings: bindings };
+                            if res.is_err() {
+                                return res;
+                            } else {
+                                bindings.insert(param_iter.next().unwrap().unwrap_leaf(),
+                                                res.unwrap());
+                            }
 
-                            return eval(lambda_body, &new_env);
                         }
+
+                        let new_env = Environment { parent: Some(env), 
+                                                    bindings: bindings };
+
+                        return eval(lambda_body, &new_env);
                     }
                 }
 
