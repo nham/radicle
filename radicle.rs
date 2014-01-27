@@ -6,17 +6,22 @@
 use std::char::is_whitespace;
 use std::vec::MoveItems;
 use std::iter::Peekable;
-
 use std::hashmap::HashMap;
+use std::str;
+use std::io::File;
+use std::os;
+
 use tree::Tree;
 use Atom = tree::Leaf;
 use List = tree::Branch;
+
 
 
 pub mod tree;
 
 fn main() {
     let globenv = Environment { parent: None, bindings: HashMap::new() };
+    /*
     read_eval("(quote x)", &globenv);
     read_eval("(atom x)", &globenv);
     read_eval("(atom (quote x))", &globenv);
@@ -65,7 +70,21 @@ fn main() {
                       ((quote t) (cons (subst x y (car z))
                                        (subst x y (cdr z)))))))
  (quote m) (quote b) (quote (a b (a b c) d)))", &globenv);
+ */
 
+    let args = os::args();
+    if args.len() == 1 {
+        println!("REPL is not yet implemented.");
+        return;
+    } else if args.len() > 2 {
+        println!("Only one argument allowed.");
+        return;
+    }
+
+    let path = Path::new(args[1]);
+    let mut hw_file = File::open(&path);
+    let data = str::from_utf8_owned(hw_file.read_to_end());
+    read_eval(data.unwrap(), &globenv);
 }
 
 

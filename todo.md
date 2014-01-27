@@ -1,5 +1,4 @@
  - quote (') syntactical sugar
  - defun syntatical sugar
- - reading input from a file
  - repl
  - evaluate a series of expressions instead of just one.
