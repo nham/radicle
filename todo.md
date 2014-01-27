@@ -2,4 +2,4 @@
  - defun syntatical sugar
  - repl
  - evaluate a series of expressions instead of just one.
- - comments in source files
+ - real unit tests o_o
