@@ -52,24 +52,6 @@ fn main() {
     read_eval(
 "((label ZABBA (lambda (x y z) (cons y (cons z (cons x (quote (batman)))))))
   (quote CONSME) (quote santa) (car (quote (10 20 30))))", &globenv);
-
-    read_eval(
-"((label map (lambda (f xs) (cond ((atom xs) xs)
-                                  ((quote t) (cons (f (car xs)) 
-                                 (map f (cdr xs)))))))
-  (quote (lambda (x) (cons x (quote (y z)))))
-  (quote (a b c)))",
-&globenv);
-    // result should be ((a y z) (b y z) (c y z))
-
-    read_eval(
-"((label subst (lambda (x y z)
-                (cond ((atom z)
-                       (cond ((eq z y) x)
-                             ((quote t) z)))
-                      ((quote t) (cons (subst x y (car z))
-                                       (subst x y (cdr z)))))))
- (quote m) (quote b) (quote (a b (a b c) d)))", &globenv);
  */
 
     let args = os::args();
