@@ -21,6 +21,29 @@ pub mod tree;
 
 fn main() {
     let globenv = Environment { parent: None, bindings: HashMap::new() };
+
+    let args = os::args();
+    if args.len() == 1 {
+        println!("radicle: REPL is not yet implemented.");
+        return;
+    } else if args.len() > 2 {
+        println!("radicle: Only one argument allowed.");
+        return;
+    }
+
+    if !"--test".equiv(&args[1]) {
+        let fname = args[1].clone();
+        let path = Path::new(args[1]);
+        if path.is_file() {
+            let mut hw_file = File::open(&path);
+            let data = str::from_utf8_owned(hw_file.read_to_end());
+            read_eval(data.unwrap(), &globenv);
+        } else {
+            println!("radicle: can't open file {}", fname);
+            return;
+        }
+    }
+
     /*
     read_eval("(quote x)", &globenv);
     read_eval("(atom x)", &globenv);
@@ -54,19 +77,8 @@ fn main() {
   (quote CONSME) (quote santa) (car (quote (10 20 30))))", &globenv);
  */
 
-    let args = os::args();
-    if args.len() == 1 {
-        println!("REPL is not yet implemented.");
-        return;
-    } else if args.len() > 2 {
-        println!("Only one argument allowed.");
-        return;
-    }
 
-    let path = Path::new(args[1]);
-    let mut hw_file = File::open(&path);
-    let data = str::from_utf8_owned(hw_file.read_to_end());
-    read_eval(data.unwrap(), &globenv);
+    read_eval("(quote x) (quote y) (quote z)", &globenv);
 }
 
 
