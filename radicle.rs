@@ -549,3 +549,29 @@ pub fn result_fmap2<S, T, U>(v1: Result<S, ~str>,
             }
     }
 }
+
+
+
+#[test]
+fn test_eval_symbol() {
+    let mut env = Environment{parent: None, bindings: HashMap::new()};
+
+    // symbol not found in env should be eval err
+    assert!( eval(Atom(~"foo"), &env).is_err() );
+
+    let bar = Atom(~"bar");
+    let bar2 = bar.clone();
+    env.bindings.insert(~"foo", bar);
+    assert!( eval(Atom(~"foo"), &env).is_ok() );
+    assert!( eval(Atom(~"foo"), &env).unwrap().eq(&bar2) );
+
+    let env2 = Environment{parent: Some(&env), bindings: HashMap::new()};
+    assert!( eval(Atom(~"foo"), &env2).is_ok() );
+    assert!( eval(Atom(~"foo"), &env2).unwrap().eq(&bar2) );
+}
+
+#[test]
+fn test_eval_empty_list() {
+    let env = Environment{parent: None, bindings: HashMap::new()};
+    assert!( eval(List(~[]), &env).is_err() );
+}
