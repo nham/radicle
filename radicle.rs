@@ -44,13 +44,6 @@ fn main() {
     }
 
     /*
-    read_eval("(quote x)", &globenv);
-    read_eval("(atom x)", &globenv);
-    read_eval("(atom (quote x))", &globenv);
-    read_eval("(atom (atom x))", &globenv);
-    read_eval("(atom (quote ()))", &globenv);
-    read_eval("(atom (my little pony))", &globenv);
-    read_eval("(atom (quote (my little pony)))", &globenv);
     read_eval("(car (quote (10 5 9)))", &globenv);
     read_eval("(cdr (quote (10)))", &globenv);
     read_eval("(cdr (quote (10 5 9)))", &globenv);
