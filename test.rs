@@ -87,3 +87,29 @@ fn test_eval_atom() {
     assert!( qlist_eval.is_ok() && qlist_eval.unwrap().eq(&nil) );
 
 }
+
+#[test]
+fn test_eval_car() {
+    let env = Environment{parent: None, bindings: HashMap::new()};
+
+    let foo = Atom(~"foo");
+    let bar = Atom(~"bar");
+    let nil = List(~[]);
+    let quote = Atom(~"quote");
+    let car = Atom(~"car");
+
+    let qfoo = List(~[quote.clone(), foo.clone()]);
+    let qnil = List(~[quote.clone(), nil.clone()]);
+
+    let qfoo_eval = eval(List(~[car.clone(), qfoo]), &env);
+    assert!( qfoo_eval.is_err() );
+
+    let qnil_eval = eval(List(~[car.clone(), qnil]), &env);
+    assert!( qnil_eval.is_err() );
+
+    let list = List(~[foo.clone(), bar.clone()]);
+    let qlist = List(~[quote.clone(), list.clone()]);
+    let qlist_eval = eval(List(~[car.clone(), qlist]), &env);
+    assert!( qlist_eval.is_ok() && qlist_eval.unwrap().eq(&foo) );
+
+}
