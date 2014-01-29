@@ -44,12 +44,6 @@ fn main() {
     }
 
     /*
-    read_eval("(car (quote (10 5 9)))", &globenv);
-    read_eval("(cdr (quote (10)))", &globenv);
-    read_eval("(cdr (quote (10 5 9)))", &globenv);
-    read_eval("(cons (quote 7) (quote (10 5 9)))", &globenv);
-    read_eval("(cons (quote 7) (quote ()))", &globenv);
-    read_eval("(car (cdr (quote (1 t 3))))", &globenv);
     read_eval("(cond ((quote f) 7) ((quote foo) 8) ((quote t) (quote 9)))", &globenv);
     read_eval("(cond ((quote (1 t 3)) 7) ((car (quote (1 t 3))) 8) ((car (cdr (quote (1 t 3)))) (quote (a b c))))", &globenv);
     read_eval("((lambda (x) (cons x (quote (ab cd)))) (quote CONSME))", &globenv);

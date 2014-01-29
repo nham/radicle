@@ -113,3 +113,51 @@ fn test_eval_car() {
     assert!( qlist_eval.is_ok() && qlist_eval.unwrap().eq(&foo) );
 
 }
+
+#[test]
+fn test_eval_cdr() {
+    let env = Environment{parent: None, bindings: HashMap::new()};
+
+    let foo = Atom(~"foo");
+    let bar = Atom(~"bar");
+    let nil = List(~[]);
+    let quote = Atom(~"quote");
+    let cdr = Atom(~"cdr");
+
+    let qfoo = List(~[quote.clone(), foo.clone()]);
+    let qnil = List(~[quote.clone(), nil.clone()]);
+
+    let qfoo_eval = eval(List(~[cdr.clone(), qfoo]), &env);
+    assert!( qfoo_eval.is_err() );
+
+    let qnil_eval = eval(List(~[cdr.clone(), qnil]), &env);
+    assert!( qnil_eval.is_err() );
+
+    let list = List(~[foo.clone(), bar.clone()]);
+    let qlist = List(~[quote.clone(), list.clone()]);
+    let qlist_eval = eval(List(~[cdr.clone(), qlist]), &env);
+
+    let list_foo = List(~[bar.clone()]);
+    assert!( qlist_eval.is_ok() && qlist_eval.unwrap().eq(&list_foo) );
+}
+
+#[test]
+fn test_eval_cons() {
+    let env = Environment{parent: None, bindings: HashMap::new()};
+
+    let foo = Atom(~"foo");
+    let bar = Atom(~"bar");
+    let quote = Atom(~"quote");
+    let cons = Atom(~"cons");
+
+    let bar_list = List(~[bar.clone()]);
+    let qbar_list = List(~[quote.clone(), bar_list.clone()]);
+
+    let bar_eval = eval(List(~[cons.clone(), foo.clone(), bar.clone()]), &env);
+    assert!( bar_eval.is_err() );
+
+    let qfoo = List(~[quote.clone(), foo.clone()]);
+    let barlist_eval = eval(List(~[cons.clone(), qfoo.clone(), qbar_list.clone()]), &env);
+    let foobar_list = List(~[foo.clone(), bar.clone()]);
+    assert!( barlist_eval.is_ok() && barlist_eval.unwrap().eq(&foobar_list) );
+}
