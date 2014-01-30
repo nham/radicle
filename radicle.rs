@@ -138,13 +138,13 @@ impl ::tree::Tree<~str> {
 
 
 /// Reads a string of symbols into an expression (or possibly an error message)
-pub fn read(s: &str) -> Result<Expression, &str> {
+pub fn read(s: &str) -> Result<Expression, ~str> {
     let mut stream = tokenize(s);
     let x = read_from(&mut stream);
 
     // eventually this will be stream.is_empty(), but theres a bug rust!
     if stream.peek().is_some() {
-        return Err("Tokens left over, so parse was unsuccessful.");
+        return Err(~"Tokens left over, so parse was unsuccessful.");
     }
 
     x
@@ -154,7 +154,9 @@ pub fn read(s: &str) -> Result<Expression, &str> {
 /// Turns a string into a stream of tokens. Currently assumes that tokens
 /// do not have spaces or parens in them.
 pub fn tokenize(s: &str) -> TokenStream {
-    let s1 = s.replace("(", " ( ").replace(")", " ) ");
+    let mut s1 = s.replace("(", " ( ").replace(")", " ) ");
+    s1 = s1.replace("[", " [ ").replace("]", " ] ");
+    s1 = s1.replace("{", " { ").replace("}", " } ");
 
     let x: ~[&str] = s1.split(|c: char| is_whitespace(c)).collect();
     
@@ -170,18 +172,26 @@ pub fn tokenize(s: &str) -> TokenStream {
 
 /// Attempts to read an entire expression from the token stream. Detects
 /// mismatched parentheses.
-pub fn read_from(v: &mut TokenStream) -> Result<Expression, &str> {
+pub fn read_from(v: &mut TokenStream) -> Result<Expression, ~str> {
+    fn is_beginning_list_sep(s: &~str) -> bool {
+        "(".equiv(s) || "[".equiv(s) || "{".equiv(s)
+    }
+
+    fn is_ending_list_sep(s: &~str) -> bool {
+        ")".equiv(s) || "]".equiv(s) || "}".equiv(s)
+    }
+
     let tok = v.next();
     match tok {
-        None        => Err("Unexpected end of token stream"),
+        None        => Err(~"Unexpected end of token stream"),
         Some(s) =>
-            if "(".equiv(&s) {
+            if is_beginning_list_sep(&s) {
                 let mut ch = ~[];
 
                 loop {
                     {
                         let x = v.peek();
-                        if x.is_some() && ")".equiv(x.unwrap()) {
+                        if x.is_some() && is_ending_list_sep( x.unwrap()) {
                             break;
                         }
                     }
@@ -195,8 +205,8 @@ pub fn read_from(v: &mut TokenStream) -> Result<Expression, &str> {
                 v.next();
                 Ok( List(ch) )
 
-            } else if ")".equiv(&s) {
-                Err("Unexpected ')'")
+            } else if is_ending_list_sep(&s) {
+                Err(format!("Unexpected '{}'", s))
             } else {
                 Ok( Atom(s) )
             }
