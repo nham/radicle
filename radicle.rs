@@ -37,6 +37,7 @@ fn main() {
             let mut hw_file = File::open(&path);
             let data = str::from_utf8_owned(hw_file.read_to_end());
             read_eval(data.unwrap(), &globenv);
+            return;
         } else {
             println!("radicle: can't open file {}", fname);
             return;

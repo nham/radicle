@@ -3,3 +3,4 @@
  - repl
  - evaluate a series of expressions instead of just one.
  - real unit tests o_o
+ - allow [ ] and { } to delimit lists, additionally
