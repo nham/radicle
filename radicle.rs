@@ -313,33 +313,25 @@ pub fn eval<'a>(expr: Expression, env: &'a Environment<'a>) -> Result<Expression
 
                 // params is the list of formal arguments to the lambda
                 let params: ~[Expression] = lambda_iter.next().unwrap().unwrap_branch();
-                let lambda_body: Expression = lambda_iter.next().unwrap();
-
-                debug!("\n :: params =\n{}", params);
-                debug!("\n :: lambda_body =\n{}", lambda_body);
-
-
                 if params.len() != num_args {
                     return Err(~"mismatch between number of procedure args and number of args called with.");
                 }
 
                 let mut bindings = HashMap::<~str, Expression>::new();
-
                 if func_sym.is_some() {
                     bindings.insert(func_sym.unwrap(), label_expr.unwrap());
                 }
 
                 let new_binds = populate_bindings(vec_iter, params, env, bindings);
-
                 if new_binds.is_err() {
                     return Err( new_binds.unwrap_err() );
                 }
-
 
                 let new_env = Environment { parent: Some(env), 
                                             bindings: new_binds.unwrap() };
 
                 debug!("\n :: arguments have been passed into environment, evaling lambda body\n");
+                let lambda_body: Expression = lambda_iter.next().unwrap();
                 eval(lambda_body, &new_env)
 
             }
