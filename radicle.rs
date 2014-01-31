@@ -232,40 +232,24 @@ pub fn eval<'a>(expr: Expression, env: &'a Environment<'a>) -> Result<Expression
         },
         List([]) => Err(~"No procedure to call. TODO: a better error message?"),
         List(vec) => {
-            let t = Atom(~"t");
-
             if is_symbol("quote", &vec[0]) {
-
                 if vec.len() != 2 {
                     Err(~"`quote` expects exactly one argument.")
                 } else {
                     Ok( vec[1] )
                 }
-
             } else if is_symbol("atom", &vec[0]) {
-
                 eval_atom(vec, env)
-
             } else if is_symbol("eq", &vec[0]) {
-
                 eval_eq(vec, env)
-
             } else if is_symbol("car", &vec[0]) {
-
                 eval_car(vec, env)
-
             } else if is_symbol("cdr", &vec[0]) {
-
                 eval_cdr(vec, env)
-
             } else if is_symbol("cons", &vec[0]) {
-
                 eval_cons(vec, env)
-
             } else if is_symbol("cond", &vec[0]) {
-
                 eval_cond(vec, env)
-
             } else {
 
                 let num_args = vec.len() - 1;
