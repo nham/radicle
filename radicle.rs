@@ -329,30 +329,15 @@ pub fn eval<'a>(expr: Expression, env: &'a Environment<'a>) -> Result<Expression
                     bindings.insert(func_sym.unwrap(), label_expr.unwrap());
                 }
 
-                // iterate through remaining elements in vec_iter
-                // for each element, evaluate it. if we get an error,
-                // terminate and return that error.
-                // otherwise, insert that vaue into the bindings HashMap that
-                // we are building up and continue onto the next arg
-                let mut param_iter = params.move_iter();
+                let new_binds = populate_bindings(vec_iter, params, env, bindings);
 
-                debug!("\n :: iterating through args now and passing them into bindings\n");
-                for v in vec_iter {
-                    debug!("  -- {}", v);
-                    let res = eval(v, env);
-
-                    if res.is_err() {
-                        return res;
-                    } else {
-                        bindings.insert(param_iter.next().unwrap().unwrap_leaf(),
-                                        res.unwrap());
-                    }
-
+                if new_binds.is_err() {
+                    return Err( new_binds.unwrap_err() );
                 }
 
 
                 let new_env = Environment { parent: Some(env), 
-                                            bindings: bindings };
+                                            bindings: new_binds.unwrap() };
 
                 debug!("\n :: arguments have been passed into environment, evaling lambda body\n");
                 eval(lambda_body, &new_env)
@@ -535,6 +520,37 @@ fn is_symbol(op: &str, expr: &Expression) -> bool {
     } else {
         false
     }
+}
+
+/// takes a vector of expressions and a vector of Atoms, evals each expression
+/// and inserts it into a provided hashMap (with the Atom as the key)
+fn populate_bindings(mut args: MoveItems<Expression>, params: ~[Expression],
+     env: &Environment, mut bindings: HashMap<~str, Expression>) 
+    -> Result<HashMap<~str, Expression>, ~str> {
+
+    let mut param_iter = params.move_iter();
+
+    debug!("\n :: iterating through args now and passing them into bindings\n");
+    for arg in args {
+        debug!("  -- {}", arg);
+        let res = eval(arg, env);
+
+        if res.is_err() {
+            return Err( res.unwrap_err() );
+        } else {
+            let next_param: Expression  = param_iter.next().unwrap();
+
+            if !next_param.is_atom() {
+                return Err(~"Lambda parameter is not a symbol");
+            } else {
+                bindings.insert(next_param.unwrap_leaf(),
+                                res.unwrap());
+            }
+        }
+
+    }
+
+    Ok( bindings )
 }
 
 
