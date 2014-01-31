@@ -62,10 +62,10 @@ fn main() {
     read_eval(
 "((label ZABBA (lambda (x y z) (cons y (cons z (cons x (quote (batman)))))))
   (quote CONSME) (quote santa) (car (quote (10 20 30))))", &globenv);
- */
 
 
     read_eval("(quote x) (quote y) (quote z)", &globenv);
+ */
 }
 
 
@@ -264,34 +264,7 @@ pub fn eval<'a>(expr: Expression, env: &'a Environment<'a>) -> Result<Expression
 
             } else if is_symbol("cond", &vec[0]) {
 
-                let mut i = 1;
-                while i < vec.len() {
-                    if !vec[i].is_list() {
-                        return Err(~"Invalid argument to `cond`");
-                    } 
-
-                    let arg = vec[i].clone();
-                    let list = arg.unwrap_branch();
-                    
-                    if list.len() != 2 {
-                        return Err(~"Invalid argument to `cond`");
-                    } else {
-                        let res = eval(list[0].clone(), env);
-                        if res.is_err() {
-                            return res;
-                        } else {
-                            let val = res.unwrap();
-
-                            if val.eq(&t) {
-                                return eval(list[1], env);
-                            }
-                        }
-                    }
-
-                    i += 1;
-                }
-
-                Err(~"No branch of `cond` evaluated to true. Don't think this is an error, though. Need to decide how to handle.")
+                eval_cond(vec, env)
 
             } else {
 
@@ -492,6 +465,37 @@ fn eval_cons(vec: ~[Expression], env: &Environment) -> Result<Expression, ~str> 
                 }
             })
     }
+}
+
+fn eval_cond(vec: ~[Expression], env: &Environment) -> Result<Expression, ~str> {
+    let mut i = 1;
+    while i < vec.len() {
+        if !vec[i].is_list() {
+            return Err(~"Invalid argument to `cond`");
+        }
+
+        let arg = vec[i].clone();
+        let list = arg.unwrap_branch();
+
+        if list.len() != 2 {
+            return Err(~"Invalid argument to `cond`");
+        } else {
+            let res = eval(list[0].clone(), env);
+            if res.is_err() {
+                return res;
+            } else {
+                let val = res.unwrap();
+
+                if val.eq( &Atom(~"t") ) {
+                    return eval(list[1], env);
+                }
+            }
+        }
+
+        i += 1;
+    }
+
+    Err(~"No branch of `cond` evaluated to true. Don't think this is an error, though. Need to decide how to handle.")
 }
 
 
