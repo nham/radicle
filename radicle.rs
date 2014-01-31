@@ -531,13 +531,8 @@ fn populate_bindings(mut args: MoveItems<Expression>, params: ~[Expression],
             return Err( res.unwrap_err() );
         } else {
             let next_param: Expression  = param_iter.next().unwrap();
-
-            if !next_param.is_atom() {
-                return Err(~"Lambda parameter is not a symbol");
-            } else {
-                bindings.insert(next_param.unwrap_leaf(),
-                                res.unwrap());
-            }
+            bindings.insert(next_param.unwrap_leaf(),
+                            res.unwrap());
         }
 
     }
