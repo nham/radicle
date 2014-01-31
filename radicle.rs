@@ -259,13 +259,7 @@ pub fn eval<'a>(expr: Expr, env: &'a Environment<'a>) -> Result<Expr, ~str> {
                     return Err( res.unwrap_err() );
                 }
 
-                let (lambda, label_expr, func_sym, args) = res.unwrap();
-
-                let mut bindings = HashMap::<~str, Expr>::new();
-                // populate bindings with the label symbol if it's a label
-                if func_sym.is_some() {
-                    bindings.insert(func_sym.unwrap(), label_expr.unwrap());
-                }
+                let (mut lambda, mut bindings, args) = res.unwrap();
 
 
                 let mut lambda_iter = lambda.move_iter();
@@ -469,7 +463,7 @@ fn is_symbol(op: &str, expr: &Expr) -> bool {
 }
 
 fn prepare_lambda(vec: ~[Expr], env: &Environment)
-    -> Result<(~[Expr], Option<Expr>, Option<~str>, MoveItems<Expr>), ~str> {
+    -> Result<(~[Expr], HashMap<~str, Expr>, MoveItems<Expr>), ~str> {
 
     let mut vec_iter = vec.move_iter();
     let mut op_expr = vec_iter.next().unwrap();
@@ -507,28 +501,25 @@ fn prepare_lambda(vec: ~[Expr], env: &Environment)
 
     // If we've made it here, op_expr is either a label or lambda literal
     let lambda: ~[Expr];
-
-    // the next two are only used if its a label
-    let label_expr: Option<Expr>;
-    let func_sym: Option<~str>;
+    let mut bindings = HashMap::<~str, Expr>::new();
 
     if is_label_literal(&op_expr) {
-        label_expr = Some(op_expr.clone());
+        let label_expr = op_expr.clone();
 
         let label = op_expr.unwrap_branch();
         let mut label_iter = label.move_iter();
         label_iter.next(); //discard "label" symbol
 
-        func_sym = Some(label_iter.next().unwrap().unwrap_leaf());
+        let func_sym = label_iter.next().unwrap().unwrap_leaf();
+
+        bindings.insert(func_sym, label_expr);
 
         lambda = label_iter.next().unwrap().unwrap_branch();
     } else {
         lambda = op_expr.unwrap_branch();
-        label_expr = None;
-        func_sym = None;
     }
 
-    Ok( (lambda, label_expr, func_sym, vec_iter) )
+    Ok( (lambda, bindings, vec_iter) )
 }
 
 
