@@ -253,58 +253,13 @@ pub fn eval<'a>(expr: Expr, env: &'a Environment<'a>) -> Result<Expr, ~str> {
             } else {
 
                 let num_args = vec.len() - 1;
+                let res = prepare_lambda(vec, env);
 
-                let mut vec_iter = vec.move_iter();
-                let mut op_expr = vec_iter.next().unwrap();
-
-                // we need to distinguish between "literal" lambda calls, where
-                // the first op literally matches the lambda pattern
-                //     (lambda (p1 ... pn) body)
-                // and the case where the op expression is something that evaluates
-                // to the literal lambda pattern.
-                //
-                // the reason we need to distinguish is that we must not evaluate
-                // the op in the first case, since (lambda (p1 ... pn) body) does
-                // not evaluate to anything, according to PG?
-                //
-                // ditto for the label literals. we package both of these together
-                // in is_func_literal()
-                if !is_func_literal(&op_expr) {
-                    let res = eval(op_expr, env);
-
-                    if res.is_err() {
-                        return res;
-                    } else {
-                        op_expr = res.unwrap();
-
-                        if !is_func_literal(&op_expr) {
-                            return Err(~"Unrecognized expression.");
-                        }
-                    }
+                if res.is_err() {
+                    return Err( res.unwrap_err() );
                 }
 
-                // If we've made it here, op_expr is either a label or lambda literal
-                let lambda: ~[Expr];
-
-                // the next two are only used if its a label
-                let label_expr: Option<Expr>;
-                let func_sym: Option<~str>;
-
-                if is_label_literal(&op_expr) {
-                    label_expr = Some(op_expr.clone());
-
-                    let label = op_expr.unwrap_branch();
-                    let mut label_iter = label.move_iter();
-                    label_iter.next(); //discard "label" symbol
-
-                    func_sym = Some(label_iter.next().unwrap().unwrap_leaf());
-
-                    lambda = label_iter.next().unwrap().unwrap_branch();
-                } else {
-                    lambda = op_expr.unwrap_branch();
-                    label_expr = None;
-                    func_sym = None;
-                }
+                let (lambda, label_expr, func_sym, args) = res.unwrap();
 
                 let mut bindings = HashMap::<~str, Expr>::new();
                 // populate bindings with the label symbol if it's a label
@@ -322,7 +277,7 @@ pub fn eval<'a>(expr: Expr, env: &'a Environment<'a>) -> Result<Expr, ~str> {
                     return Err(~"mismatch between number of procedure args and number of args called with.");
                 }
 
-                let new_binds = populate_bindings(vec_iter, params, env, bindings);
+                let new_binds = populate_bindings(args, params, env, bindings);
                 if new_binds.is_err() {
                     return Err( new_binds.unwrap_err() );
                 }
@@ -512,6 +467,70 @@ fn is_symbol(op: &str, expr: &Expr) -> bool {
         false
     }
 }
+
+fn prepare_lambda(vec: ~[Expr], env: &Environment)
+    -> Result<(~[Expr], Option<Expr>, Option<~str>, MoveItems<Expr>), ~str> {
+
+    let mut vec_iter = vec.move_iter();
+    let mut op_expr = vec_iter.next().unwrap();
+
+    // There are two kinds of function calls: lambda calls and label
+    // calls. Labels are just lambdas that can cal themselves.
+    //
+    // We need to distinguish between literal function calls, which
+    // take the form:
+    //     ((lambda params body) expr1 ... exprn)
+    // or 
+    //     (label sym ((lambda params body)) expr1 ... exprn)
+    //
+    // and non-literals, which take the form (expr0 expr1 ... exprn),
+    // where expr1 is an expression that evaluates to a function
+    // literal. The reason we need to make this distinction is that
+    // label and lambda expressions do not evaluate to anything, so 
+    // if the operator expression is such a literal we must not eval
+    // it. However, if it is not such a literal, we need to eval it
+    // to see whether it evaluates to a function literal.
+
+    if !is_func_literal(&op_expr) {
+        let res = eval(op_expr, env);
+
+        if res.is_err() {
+            return Err( res.unwrap_err() );
+        } else {
+            op_expr = res.unwrap();
+
+            if !is_func_literal(&op_expr) {
+                return Err(~"Unrecognized expression.");
+            }
+        }
+    }
+
+    // If we've made it here, op_expr is either a label or lambda literal
+    let lambda: ~[Expr];
+
+    // the next two are only used if its a label
+    let label_expr: Option<Expr>;
+    let func_sym: Option<~str>;
+
+    if is_label_literal(&op_expr) {
+        label_expr = Some(op_expr.clone());
+
+        let label = op_expr.unwrap_branch();
+        let mut label_iter = label.move_iter();
+        label_iter.next(); //discard "label" symbol
+
+        func_sym = Some(label_iter.next().unwrap().unwrap_leaf());
+
+        lambda = label_iter.next().unwrap().unwrap_branch();
+    } else {
+        lambda = op_expr.unwrap_branch();
+        label_expr = None;
+        func_sym = None;
+    }
+
+    Ok( (lambda, label_expr, func_sym, vec_iter) )
+}
+
 
 /// takes a vector of expressions and a vector of Atoms, evals each expression
 /// and inserts it into a provided hashMap (with the Atom as the key)
