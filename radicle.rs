@@ -91,16 +91,16 @@ pub fn read_eval(s: &str, env: &Environment) {
 pub type TokenStream = Peekable<~str, MoveItems<~str>>;
 
 /// The representation of Lisp expressions
-pub type Expression = Tree<~str>;
+pub type Expr = Tree<~str>;
 
 
 pub struct Environment<'a> {
     parent: Option<&'a Environment<'a>>,
-    bindings: HashMap<~str, Expression>,
+    bindings: HashMap<~str, Expr>,
 }
 
 impl<'a> Environment<'a> {
-    fn find(&'a self, key: &~str) -> Option<&'a Expression> {
+    fn find(&'a self, key: &~str) -> Option<&'a Expr> {
         if self.bindings.contains_key(key) {
             self.bindings.find(key)
         } else {
@@ -112,7 +112,7 @@ impl<'a> Environment<'a> {
         }
     }
 
-    fn find_copy(&self, key: &~str) -> Option<Expression> {
+    fn find_copy(&self, key: &~str) -> Option<Expr> {
         if self.bindings.contains_key(key) {
             self.bindings.find_copy(key)
         } else {
@@ -142,7 +142,7 @@ impl ::tree::Tree<~str> {
 
 
 /// Reads a string of symbols into an expression (or possibly an error message)
-pub fn read(s: &str) -> Result<Expression, ~str> {
+pub fn read(s: &str) -> Result<Expr, ~str> {
     let mut stream = tokenize(s);
     let x = read_from(&mut stream);
 
@@ -176,7 +176,7 @@ pub fn tokenize(s: &str) -> TokenStream {
 
 /// Attempts to read an entire expression from the token stream. Detects
 /// mismatched parentheses.
-pub fn read_from(v: &mut TokenStream) -> Result<Expression, ~str> {
+pub fn read_from(v: &mut TokenStream) -> Result<Expr, ~str> {
     fn is_beginning_list_sep(s: &~str) -> bool {
         "(".equiv(s) || "[".equiv(s) || "{".equiv(s)
     }
@@ -219,7 +219,7 @@ pub fn read_from(v: &mut TokenStream) -> Result<Expression, ~str> {
 
 
 /// The heart and soul of Radicle.
-pub fn eval<'a>(expr: Expression, env: &'a Environment<'a>) -> Result<Expression, ~str> {
+pub fn eval<'a>(expr: Expr, env: &'a Environment<'a>) -> Result<Expr, ~str> {
     debug!("\n :: Entered eval, expr = \n{}\n", expr);
     match expr {
         Atom(ref s) => {
@@ -284,10 +284,10 @@ pub fn eval<'a>(expr: Expression, env: &'a Environment<'a>) -> Result<Expression
                 }
 
                 // If we've made it here, op_expr is either a label or lambda literal
-                let lambda: ~[Expression];
+                let lambda: ~[Expr];
 
                 // the next two are only used if its a label
-                let label_expr: Option<Expression>;
+                let label_expr: Option<Expr>;
                 let func_sym: Option<~str>;
 
                 if is_label_literal(&op_expr) {
@@ -312,12 +312,12 @@ pub fn eval<'a>(expr: Expression, env: &'a Environment<'a>) -> Result<Expression
                 lambda_iter.next(); // discard "lambda" symbol, not needed
 
                 // params is the list of formal arguments to the lambda
-                let params: ~[Expression] = lambda_iter.next().unwrap().unwrap_branch();
+                let params: ~[Expr] = lambda_iter.next().unwrap().unwrap_branch();
                 if params.len() != num_args {
                     return Err(~"mismatch between number of procedure args and number of args called with.");
                 }
 
-                let mut bindings = HashMap::<~str, Expression>::new();
+                let mut bindings = HashMap::<~str, Expr>::new();
                 if func_sym.is_some() {
                     bindings.insert(func_sym.unwrap(), label_expr.unwrap());
                 }
@@ -331,7 +331,7 @@ pub fn eval<'a>(expr: Expression, env: &'a Environment<'a>) -> Result<Expression
                                             bindings: new_binds.unwrap() };
 
                 debug!("\n :: arguments have been passed into environment, evaling lambda body\n");
-                let lambda_body: Expression = lambda_iter.next().unwrap();
+                let lambda_body: Expr = lambda_iter.next().unwrap();
                 eval(lambda_body, &new_env)
 
             }
@@ -339,12 +339,12 @@ pub fn eval<'a>(expr: Expression, env: &'a Environment<'a>) -> Result<Expression
     }
 }
 
-fn eval_atom(vec: ~[Expression], env: &Environment) -> Result<Expression, ~str> {
+fn eval_atom(vec: ~[Expr], env: &Environment) -> Result<Expr, ~str> {
     if vec.len() != 2 {
         Err(~"`atom` expects exactly one argument.")
     } else {
         result_bind(eval(vec[1], env), 
-                    |val: Expression| -> Result<Expression, ~str> {
+                    |val: Expr| -> Result<Expr, ~str> {
                         if val.is_atom() || val.is_empty_list() {
                             Ok( Atom(~"t") )
                         } else {
@@ -355,14 +355,14 @@ fn eval_atom(vec: ~[Expression], env: &Environment) -> Result<Expression, ~str> 
 }
 
 
-fn eval_eq(vec: ~[Expression], env: &Environment) -> Result<Expression, ~str> {
+fn eval_eq(vec: ~[Expr], env: &Environment) -> Result<Expr, ~str> {
 
     if vec.len() != 3 {
         Err(~"`eq` expects exactly two arguments.")
     } else {
         result_fmap2(eval(vec[1].clone(), env), 
                      eval(vec[2], env), 
-             |val1: Expression, val2: Expression| -> Result<Expression, ~str> {
+             |val1: Expr, val2: Expr| -> Result<Expr, ~str> {
                 if (val1.is_empty_list() && val2.is_empty_list())
                    || (val1.is_atom() && val2.is_atom() && val1.eq(&val2)) {
                     Ok( Atom(~"t") )
@@ -374,13 +374,13 @@ fn eval_eq(vec: ~[Expression], env: &Environment) -> Result<Expression, ~str> {
 }
 
 
-fn eval_car(vec: ~[Expression], env: &Environment) -> Result<Expression, ~str> {
+fn eval_car(vec: ~[Expr], env: &Environment) -> Result<Expr, ~str> {
 
     if vec.len() != 2 {
         Err(~"`car` expects exactly one argument.")
     } else {
         result_bind(eval(vec[1], env), 
-                    |val: Expression| -> Result<Expression, ~str> {
+                    |val: Expr| -> Result<Expr, ~str> {
                         if val.is_list() && !val.is_empty_list() {
                             let list = val.unwrap_branch();
                             Ok( list[0] )
@@ -391,13 +391,13 @@ fn eval_car(vec: ~[Expression], env: &Environment) -> Result<Expression, ~str> {
     }
 }
 
-fn eval_cdr(vec: ~[Expression], env: &Environment) -> Result<Expression, ~str> {
+fn eval_cdr(vec: ~[Expr], env: &Environment) -> Result<Expr, ~str> {
 
     if vec.len() != 2 {
         Err(~"`cdr` expects exactly one argument.")
     } else {
         result_bind(eval(vec[1], env), 
-                    |val: Expression| -> Result<Expression, ~str> {
+                    |val: Expr| -> Result<Expr, ~str> {
                         if val.is_list() && !val.is_empty_list() {
                             let mut list = val.unwrap_branch();
                             list.shift();
@@ -409,14 +409,14 @@ fn eval_cdr(vec: ~[Expression], env: &Environment) -> Result<Expression, ~str> {
     }
 }
 
-fn eval_cons(vec: ~[Expression], env: &Environment) -> Result<Expression, ~str> {
+fn eval_cons(vec: ~[Expr], env: &Environment) -> Result<Expr, ~str> {
 
     if vec.len() != 3 {
         Err(~"`cons` expects exactly two arguments.")
     } else {
         result_fmap2(eval(vec[1].clone(), env), 
                      eval(vec[2], env), 
-             |val1: Expression, val2: Expression| -> Result<Expression, ~str> {
+             |val1: Expr, val2: Expr| -> Result<Expr, ~str> {
                 if val2.is_list() {
                     let mut list = val2.unwrap_branch();
                     list.unshift(val1);
@@ -428,7 +428,7 @@ fn eval_cons(vec: ~[Expression], env: &Environment) -> Result<Expression, ~str> 
     }
 }
 
-fn eval_cond(vec: ~[Expression], env: &Environment) -> Result<Expression, ~str> {
+fn eval_cond(vec: ~[Expr], env: &Environment) -> Result<Expr, ~str> {
     let mut i = 1;
     while i < vec.len() {
         if !vec[i].is_list() {
@@ -460,11 +460,11 @@ fn eval_cond(vec: ~[Expression], env: &Environment) -> Result<Expression, ~str> 
 }
 
 
-fn is_func_literal(expr: &Expression) -> bool {
+fn is_func_literal(expr: &Expr) -> bool {
     is_lambda_literal(expr) || is_label_literal(expr)
 }
 
-fn is_lambda_literal(expr: &Expression) -> bool {
+fn is_lambda_literal(expr: &Expr) -> bool {
     if !expr.is_list() {
         return false;
     }
@@ -488,7 +488,7 @@ fn is_lambda_literal(expr: &Expression) -> bool {
     true
 }
 
-fn is_label_literal(expr: &Expression) -> bool {
+fn is_label_literal(expr: &Expr) -> bool {
     if !expr.is_list() {
         return false;
     }
@@ -505,7 +505,7 @@ fn is_label_literal(expr: &Expression) -> bool {
     true
 }
 
-fn is_symbol(op: &str, expr: &Expression) -> bool {
+fn is_symbol(op: &str, expr: &Expr) -> bool {
     if expr.is_atom() {
         let expr_op = expr.get_ref_leaf();
         op.equiv(expr_op)
@@ -516,9 +516,9 @@ fn is_symbol(op: &str, expr: &Expression) -> bool {
 
 /// takes a vector of expressions and a vector of Atoms, evals each expression
 /// and inserts it into a provided hashMap (with the Atom as the key)
-fn populate_bindings(mut args: MoveItems<Expression>, params: ~[Expression],
-     env: &Environment, mut bindings: HashMap<~str, Expression>) 
-    -> Result<HashMap<~str, Expression>, ~str> {
+fn populate_bindings(mut args: MoveItems<Expr>, params: ~[Expr],
+     env: &Environment, mut bindings: HashMap<~str, Expr>) 
+    -> Result<HashMap<~str, Expr>, ~str> {
 
     let mut param_iter = params.move_iter();
 
@@ -530,7 +530,8 @@ fn populate_bindings(mut args: MoveItems<Expression>, params: ~[Expression],
         if res.is_err() {
             return Err( res.unwrap_err() );
         } else {
-            let next_param: Expression  = param_iter.next().unwrap();
+
+            let next_param: Expr  = param_iter.next().unwrap();
             bindings.insert(next_param.unwrap_leaf(),
                             res.unwrap());
         }
