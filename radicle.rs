@@ -134,6 +134,10 @@ impl ::tree::Tree<~str> {
     fn is_list(&self) -> bool {
         self.is_branch()
     }
+
+    fn is_empty_list(&self) -> bool {
+        self.eq(&List(~[]))
+    }
 }
 
 
@@ -229,7 +233,6 @@ pub fn eval<'a>(expr: Expression, env: &'a Environment<'a>) -> Result<Expression
         List([]) => Err(~"No procedure to call. TODO: a better error message?"),
         List(vec) => {
             let t = Atom(~"t");
-            let empty: Expression = List(~[]);
 
             if is_symbol("quote", &vec[0]) {
 
@@ -241,91 +244,23 @@ pub fn eval<'a>(expr: Expression, env: &'a Environment<'a>) -> Result<Expression
 
             } else if is_symbol("atom", &vec[0]) {
 
-                let eval_atom = |val: Expression| -> Result<Expression, ~str> {
-                    if val.is_atom() || val.eq(&empty) {
-                        Ok( t.clone() )
-                    } else {
-                        Ok( empty.clone() )
-                    }
-                };
-
-                if vec.len() != 2 {
-                    Err(~"`atom` expects exactly one argument.")
-                } else {
-                    result_bind(eval(vec[1], env), eval_atom)
-                }
+                eval_atom(vec, env)
 
             } else if is_symbol("eq", &vec[0]) {
 
-                let eval_eq = |val1: Expression, val2: Expression| 
-                              -> Result<Expression, ~str> {
-                    if (val1.eq(&empty) && val2.eq(&empty))
-                       || (val1.is_atom() && val2.is_atom() && val1.eq(&val2)) {
-                        Ok( t.clone() )
-                    } else {
-                        Ok( empty.clone() )
-                    }
-                };
-
-                if vec.len() != 3 {
-                    Err(~"`eq` expects exactly two arguments.")
-                } else {
-                    result_fmap2(eval(vec[1].clone(), env), eval(vec[2], env), eval_eq)
-                }
+                eval_eq(vec, env)
 
             } else if is_symbol("car", &vec[0]) {
 
-                let eval_car = |val: Expression| -> Result<Expression, ~str> {
-                    if val.is_list() && !val.eq(&empty) {
-                        let list = val.unwrap_branch();
-                        Ok( list[0] )
-                    } else {
-                        Err(~"`car`'s argument must be a non-empty list")
-                    }
-                };
-
-                if vec.len() != 2 {
-                    Err(~"`car` expects exactly one argument.")
-                } else {
-                    result_bind(eval(vec[1], env), eval_car)
-                }
+                eval_car(vec, env)
 
             } else if is_symbol("cdr", &vec[0]) {
 
-                let eval_cdr = |val: Expression| -> Result<Expression, ~str> {
-                    if val.is_list() && !val.eq(&empty) {
-                        let mut list = val.unwrap_branch();
-                        list.shift();
-                        Ok( List(list) )
-                    } else {
-                        Err(~"`cdr`'s argument must be a non-empty list")
-                    }
-                };
-
-                if vec.len() != 2 {
-                    Err(~"`cdr` expects exactly one argument.")
-                } else {
-                    result_bind(eval(vec[1], env), eval_cdr)
-                }
+                eval_cdr(vec, env)
 
             } else if is_symbol("cons", &vec[0]) {
 
-                let eval_cons = |val1: Expression, val2: Expression| 
-                              -> Result<Expression, ~str> {
-                    if val2.is_list() {
-                        let mut list = val2.unwrap_branch();
-                        list.unshift(val1);
-                        Ok( List(list) )
-                    } else {
-                        Err(~"`cons`'s second argument must be a list")
-                    }
-                };
-
-                if vec.len() != 3 {
-                    Err(~"`cons` expects exactly two arguments.")
-                } else {
-                    result_fmap2(eval(vec[1].clone(), env), eval(vec[2], env), eval_cons)
-                }
+                eval_cons(vec, env)
 
             } else if is_symbol("cond", &vec[0]) {
 
@@ -469,6 +404,96 @@ pub fn eval<'a>(expr: Expression, env: &'a Environment<'a>) -> Result<Expression
         }
     }
 }
+
+fn eval_atom(vec: ~[Expression], env: &Environment) -> Result<Expression, ~str> {
+    if vec.len() != 2 {
+        Err(~"`atom` expects exactly one argument.")
+    } else {
+        result_bind(eval(vec[1], env), 
+                    |val: Expression| -> Result<Expression, ~str> {
+                        if val.is_atom() || val.is_empty_list() {
+                            Ok( Atom(~"t") )
+                        } else {
+                            Ok( List(~[]) )
+                        }
+                    })
+    }
+}
+
+
+fn eval_eq(vec: ~[Expression], env: &Environment) -> Result<Expression, ~str> {
+
+    if vec.len() != 3 {
+        Err(~"`eq` expects exactly two arguments.")
+    } else {
+        result_fmap2(eval(vec[1].clone(), env), 
+                     eval(vec[2], env), 
+             |val1: Expression, val2: Expression| -> Result<Expression, ~str> {
+                if (val1.is_empty_list() && val2.is_empty_list())
+                   || (val1.is_atom() && val2.is_atom() && val1.eq(&val2)) {
+                    Ok( Atom(~"t") )
+                } else {
+                    Ok( List(~[]) )
+                }
+            })
+    }
+}
+
+
+fn eval_car(vec: ~[Expression], env: &Environment) -> Result<Expression, ~str> {
+
+    if vec.len() != 2 {
+        Err(~"`car` expects exactly one argument.")
+    } else {
+        result_bind(eval(vec[1], env), 
+                    |val: Expression| -> Result<Expression, ~str> {
+                        if val.is_list() && !val.is_empty_list() {
+                            let list = val.unwrap_branch();
+                            Ok( list[0] )
+                        } else {
+                            Err(~"`car`'s argument must be a non-empty list")
+                        }
+                    })
+    }
+}
+
+fn eval_cdr(vec: ~[Expression], env: &Environment) -> Result<Expression, ~str> {
+
+    if vec.len() != 2 {
+        Err(~"`cdr` expects exactly one argument.")
+    } else {
+        result_bind(eval(vec[1], env), 
+                    |val: Expression| -> Result<Expression, ~str> {
+                        if val.is_list() && !val.is_empty_list() {
+                            let mut list = val.unwrap_branch();
+                            list.shift();
+                            Ok( List(list) )
+                        } else {
+                            Err(~"`cdr`'s argument must be a non-empty list")
+                        }
+                })
+    }
+}
+
+fn eval_cons(vec: ~[Expression], env: &Environment) -> Result<Expression, ~str> {
+
+    if vec.len() != 3 {
+        Err(~"`cons` expects exactly two arguments.")
+    } else {
+        result_fmap2(eval(vec[1].clone(), env), 
+                     eval(vec[2], env), 
+             |val1: Expression, val2: Expression| -> Result<Expression, ~str> {
+                if val2.is_list() {
+                    let mut list = val2.unwrap_branch();
+                    list.unshift(val1);
+                    Ok( List(list) )
+                } else {
+                    Err(~"`cons`'s second argument must be a list")
+                }
+            })
+    }
+}
+
 
 fn is_func_literal(expr: &Expression) -> bool {
     is_lambda_literal(expr) || is_label_literal(expr)
