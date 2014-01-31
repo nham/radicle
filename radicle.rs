@@ -306,20 +306,20 @@ pub fn eval<'a>(expr: Expr, env: &'a Environment<'a>) -> Result<Expr, ~str> {
                     func_sym = None;
                 }
 
-
-                debug!("\n :: lambda =\n{}", lambda);
-                let mut lambda_iter = lambda.move_iter();
-                lambda_iter.next(); // discard "lambda" symbol, not needed
-
-                // params is the list of formal arguments to the lambda
-                let params: ~[Expr] = lambda_iter.next().unwrap().unwrap_branch();
-                if params.len() != num_args {
-                    return Err(~"mismatch between number of procedure args and number of args called with.");
-                }
-
                 let mut bindings = HashMap::<~str, Expr>::new();
+                // populate bindings with the label symbol if it's a label
                 if func_sym.is_some() {
                     bindings.insert(func_sym.unwrap(), label_expr.unwrap());
+                }
+
+
+                let mut lambda_iter = lambda.move_iter();
+                lambda_iter.next(); // discard "lambda" symbol, not needed
+                let params: ~[Expr] = lambda_iter.next().unwrap().unwrap_branch();
+                let lambda_body: Expr = lambda_iter.next().unwrap();
+
+                if params.len() != num_args {
+                    return Err(~"mismatch between number of procedure args and number of args called with.");
                 }
 
                 let new_binds = populate_bindings(vec_iter, params, env, bindings);
@@ -331,7 +331,6 @@ pub fn eval<'a>(expr: Expr, env: &'a Environment<'a>) -> Result<Expr, ~str> {
                                             bindings: new_binds.unwrap() };
 
                 debug!("\n :: arguments have been passed into environment, evaling lambda body\n");
-                let lambda_body: Expr = lambda_iter.next().unwrap();
                 eval(lambda_body, &new_env)
 
             }
