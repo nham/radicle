@@ -161,6 +161,7 @@ pub fn tokenize(s: &str) -> TokenStream {
     let mut s1 = s.replace("(", " ( ").replace(")", " ) ");
     s1 = s1.replace("[", " [ ").replace("]", " ] ");
     s1 = s1.replace("{", " { ").replace("}", " } ");
+    s1 = s1.replace("'", " ' ");
 
     let x: ~[&str] = s1.split(|c: char| is_whitespace(c)).collect();
     
@@ -211,8 +212,11 @@ pub fn read_from(v: &mut TokenStream) -> Result<Expr, ~str> {
 
             } else if is_ending_list_sep(&s) {
                 Err(format!("Unexpected '{}'", s))
-            } else if s.starts_with("'") {
-                Ok( List(~[Atom(~"quote"), Atom( s.slice_from(1).to_owned() )]) )
+            } else if "'".equiv(&s) {
+                match read_from(v) {
+                    Err(e) => Err(e),
+                    Ok(expr) => Ok( List(~[Atom(~"quote"), expr]) ),
+                }
             } else {
                 Ok( Atom(s) )
             }

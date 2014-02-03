@@ -1,4 +1,3 @@
- - quote (') syntactical sugar
  - defun syntatical sugar
  - repl
  - evaluate a series of expressions instead of just one.
