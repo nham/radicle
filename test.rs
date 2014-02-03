@@ -188,3 +188,26 @@ fn test_eval_cons() {
     let foobar_list = List(~[foo.clone(), bar.clone()]);
     assert!( barlist_eval.is_ok() && barlist_eval.unwrap().eq(&foobar_list) );
 }
+
+#[test]
+fn test_eval_cond() {
+    let env = Environment{parent: None, bindings: HashMap::new()};
+
+    let foo = Atom(~"foo");
+    let bar = Atom(~"bar");
+    let baz = Atom(~"baz");
+    let quote = Atom(~"quote");
+    let cond = Atom(~"cond");
+    let qfoo = List(~[quote.clone(), foo.clone()]);
+    let qbar = List(~[quote.clone(), bar.clone()]);
+    let qbaz = List(~[quote.clone(), baz.clone()]);
+    let qt = List(~[quote.clone(), Atom(~"t")]);
+
+    let list = List(~[cond.clone(), 
+                      List(~[qfoo.clone(), qbar.clone()]), 
+                      List(~[qt.clone(), qbaz.clone()])]);
+
+    let eval_list = eval(list, &env);
+
+    assert!( eval_list.is_ok() && eval_list.unwrap().eq(&baz) );
+}
