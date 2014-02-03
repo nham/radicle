@@ -211,6 +211,8 @@ pub fn read_from(v: &mut TokenStream) -> Result<Expr, ~str> {
 
             } else if is_ending_list_sep(&s) {
                 Err(format!("Unexpected '{}'", s))
+            } else if s.starts_with("'") {
+                Ok( List(~[Atom(~"quote"), Atom( s.slice_from(1).to_owned() )]) )
             } else {
                 Ok( Atom(s) )
             }
