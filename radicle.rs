@@ -14,16 +14,19 @@ use tree::Tree;
 use Atom = tree::Leaf;
 use List = tree::Branch;
 
+use repl::do_repl;
+
 
 pub mod tree;
 mod test;
+mod repl;
 
 fn main() {
     let globenv = Environment { parent: None, bindings: HashMap::new() };
 
     let args = os::args();
     if args.len() == 1 {
-        println!("radicle: REPL is not yet implemented.");
+        do_repl();
         return;
     } else if args.len() > 2 {
         println!("radicle: Only one argument allowed.");
@@ -45,8 +48,6 @@ fn main() {
     }
 
     /*
-    read_eval("(cond ((quote f) 7) ((quote foo) 8) ((quote t) (quote 9)))", &globenv);
-    read_eval("(cond ((quote (1 t 3)) 7) ((car (quote (1 t 3))) 8) ((car (cdr (quote (1 t 3)))) (quote (a b c))))", &globenv);
     read_eval("((lambda (x) (cons x (quote (ab cd)))) (quote CONSME))", &globenv);
     read_eval("((lambda (x y z) (cons y (cons z (cons x (quote (batman)))))) (quote CONSME) (quote santa) (car (quote (10 20 30))))", &globenv);
     read_eval("((lambduh (x) (cons x (quote ()))) (quote CONSME))", &globenv);
@@ -71,18 +72,16 @@ fn main() {
 
 /// A convenience function that calls read & eval and displays their results
 pub fn read_eval(s: &str, env: &Environment) {
-    println!("input: {}", s);
     let parsed = read(s);
     if parsed.is_ok() {
-        println!("\nParsed: {}", parsed);
+        println!("Parsed: {}", parsed);
         match eval(parsed.unwrap(), env) {
-            Ok(x) => { println!("\nevaled: {}", x); },
+            Ok(x) => { println!("\nEvaled: {}", x); },
             Err(x) => { println!("\nEval error: {}", x); }
         }
     } else {
         println!("\nParse error: {}", parsed.unwrap_err());
     }
-    println!("\n>>>>>>>>>>>>>>>>\n");
 }
 
 
