@@ -51,24 +51,17 @@ impl<T> Tree<T> {
 impl<T: Show> Show for Tree<T> {
     fn fmt(v: &Tree<T>, f: &mut Formatter) -> Result {
         match *v {
-            Branch([]) => write!(f.buf, "()"),
-            Branch([ref ele]) => write!(f.buf, "({})", *ele),
-            Branch([ref first, ..rest]) => write!(f.buf, "({} {})", *first, *rest),
+            Branch(ref vec) => {
+                let mut vec_iter = vec.iter();
+                let mut s = format!("{}", *vec_iter.next().unwrap());
+
+                for e in vec_iter {
+                    s = s + ~" " + format!("{}", *e);
+                }
+
+                write!(f.buf, "({})", s)
+            },
             Leaf(ref val) => write!(f.buf, "{}", *val)
         }
     }
 }
-
-/*
-impl<T: Show> Show for ~[Tree<T>] {
-    fn fmt(v: &~[Tree<T>], f: &mut Formatter) -> Result {
-        for x in v.iter() {
-            write!(f.buf, " {}", *x);
-
-        }
-
-        write!(f.buf, " ");
-    }
-}
-*/
-

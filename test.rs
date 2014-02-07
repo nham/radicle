@@ -1,10 +1,8 @@
 use std::hashmap::HashMap;
 
-use Environment;
-use eval;
+use super::{Environment, eval};
 use Atom = tree::Leaf;
 use List = tree::Branch;
-
 
 #[test]
 fn test_eval_symbol() {
