@@ -1,4 +1,4 @@
-use std::fmt::{Default, Formatter};
+use std::fmt::{Show, Formatter, Result};
 
 #[deriving(Eq, Clone)]
 pub enum Tree<T> {
@@ -48,17 +48,20 @@ impl<T> Tree<T> {
 
 }
 
-impl<T: Default> Default for Tree<T> {
-    fn fmt(v: &Tree<T>, f: &mut Formatter) {
+impl<T: Show> Show for Tree<T> {
+    fn fmt(v: &Tree<T>, f: &mut Formatter) -> Result {
         match *v {
-            Branch(ref vec) => write!(f.buf, "({})", *vec),
+            Branch([]) => write!(f.buf, "()"),
+            Branch([ref ele]) => write!(f.buf, "({})", *ele),
+            Branch([ref first, ..rest]) => write!(f.buf, "({} {})", *first, *rest),
             Leaf(ref val) => write!(f.buf, "{}", *val)
         }
     }
 }
 
-impl<T: Default> Default for ~[Tree<T>] {
-    fn fmt(v: &~[Tree<T>], f: &mut Formatter) {
+/*
+impl<T: Show> Show for ~[Tree<T>] {
+    fn fmt(v: &~[Tree<T>], f: &mut Formatter) -> Result {
         for x in v.iter() {
             write!(f.buf, " {}", *x);
 
@@ -67,4 +70,5 @@ impl<T: Default> Default for ~[Tree<T>] {
         write!(f.buf, " ");
     }
 }
+*/
 

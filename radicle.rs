@@ -16,7 +16,6 @@ use List = tree::Branch;
 
 use repl::do_repl;
 
-
 pub mod tree;
 mod test;
 mod repl;
@@ -38,8 +37,13 @@ fn main() {
         let path = Path::new(args[1]);
         if path.is_file() {
             let mut hw_file = File::open(&path);
-            let data = str::from_utf8_owned(hw_file.read_to_end());
-            read_eval(data.unwrap(), &globenv);
+            let contents = hw_file.read_to_end();
+            if contents.is_err() {
+                println!("{}", contents.unwrap_err());
+            } else {
+                let data = str::from_utf8_owned(contents.unwrap());
+                read_eval(data.unwrap(), &globenv);
+            }
             return;
         } else {
             println!("radicle: can't open file {}", fname);
