@@ -1,11 +1,9 @@
 use std::io::BufferedReader;
 use std::io::stdin;
 use std::io::stdio;
-use std::hashmap::HashMap;
 
-use super::{Environment, eval, read, read_eval};
-use Atom = tree::Leaf;
-use List = tree::Branch;
+use eval::eval;
+use super::{HashMap, Environment, read_eval};
 
 pub fn do_repl() {
     let env = Environment { parent: None, bindings: HashMap::new() };
