@@ -1,1 +1,3 @@
- - defun syntatical sugar
+ - add support for defun
+ - add tests for read()
+ - add tests for evaling lambda
