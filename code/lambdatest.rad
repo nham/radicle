@@ -1,0 +1,24 @@
+((lambda (x) (cons x (quote (ab cd)))) 
+ 'CONSME)
+
+((lambda (x y z) (cons y (cons z (cons x '(batman))))) 
+ 'CONSME 
+ 'santa 
+ (car '(10 20 30)))
+
+((label foo 
+        (lambda (x) (cons x (quote (ab cd))))) 
+ 'CONSME)
+
+((label bar 
+        (lambda (x y z) (cons y (cons z (cons x '(batman))))))
+ 'CONSME 
+ 'santa 
+ (car '(10 20 30)))
+
+
+(((lambda (x) 
+           (lambda (y) (cons x 
+                             (cons y 
+                                   (quote ()))))) 
+   (quote 5)) (quote 6))

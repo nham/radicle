@@ -5,7 +5,6 @@
 pub use std::hashmap::HashMap;
 pub use std::vec::MoveItems;
 use std::str;
-use std::io::File;
 use std::os;
 
 use tree::Tree;
@@ -13,67 +12,58 @@ pub use tree::Nil;
 pub use Atom = tree::Leaf;
 pub use List = tree::Branch;
 
-use repl::do_repl;
 use eval::eval;
 use read::read;
 
 pub mod tree;
-pub mod repl;
 pub mod eval;
 pub mod read;
 mod test;
 
 fn main() {
-    let globenv = Environment::new();
-
     let args = os::args();
     if args.len() == 1 {
-        do_repl();
-        return;
+        repl();
     } else if args.len() > 2 {
         println!("radicle: Only one argument allowed.");
-        return;
+    } else {
+        interpret_file(args[1]);
     }
+}
 
-    if !"--test".equiv(&args[1]) {
-        let fname = args[1].clone();
-        let path = Path::new(args[1]);
-        if path.is_file() {
-            let mut hw_file = File::open(&path);
-            let contents = hw_file.read_to_end();
-            if contents.is_err() {
-                println!("{}", contents.unwrap_err());
-            } else {
-                let data = str::from_utf8_owned(contents.unwrap());
-                read_eval(data.unwrap(), &globenv);
-            }
-            return;
+pub fn interpret_file(fname: ~str) {
+    use std::io::File;
+    let path = Path::new(fname.clone());
+
+    if path.is_file() {
+        let mut hw_file = File::open(&path);
+        let contents = hw_file.read_to_end();
+        if contents.is_err() {
+            println!("{}", contents.unwrap_err());
         } else {
-            println!("radicle: can't open file {}", fname);
-            return;
+            let data = str::from_utf8_owned(contents.unwrap());
+            read_eval(data.unwrap(), &Environment::new());
         }
+    } else {
+        println!("radicle: can't open file {}", fname);
+    }
+}
+
+pub fn repl() {
+    use std::io::BufferedReader;
+    use std::io::stdin;
+    use std::io::stdio;
+
+    let env = Environment::new();
+    let mut stdin = BufferedReader::new(stdin());
+    print!("repl> ");
+    stdio::flush();
+    for line in stdin.lines() {
+        read_eval(line, &env);
+        print!("repl> ");
+        stdio::flush();
     }
 
-    /*
-    read_eval("((lambda (x) (cons x (quote (ab cd)))) (quote CONSME))", &globenv);
-    read_eval("((lambda (x y z) (cons y (cons z (cons x (quote (batman)))))) (quote CONSME) (quote santa) (car (quote (10 20 30))))", &globenv);
-    read_eval("((lambduh (x) (cons x (quote ()))) (quote CONSME))", &globenv);
-    read_eval("(((lambda (x) 
-           (lambda (y) (cons x 
-                             (cons y 
-                                   (quote ()))))) 
-   (quote 5)) (quote 6))", &globenv);
-    read_eval(
-"((label ZABBA (lambda (x) (cons x (quote (ab cd)))))
-  (quote CONSME))", &globenv);
-
-    read_eval(
-"((label ZABBA (lambda (x y z) (cons y (cons z (cons x (quote (batman)))))))
-  (quote CONSME) (quote santa) (car (quote (10 20 30))))", &globenv);
-
-
- */
-    read_eval("(quote x) (quote y) (quote z)", &globenv);
 }
 
 
