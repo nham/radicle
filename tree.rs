@@ -52,16 +52,22 @@ impl<T: Show> Show for Tree<T> {
     fn fmt(&self, f: &mut Formatter) -> Result {
         match *self {
             Branch(ref vec) => {
-                let mut vec_iter = vec.iter();
-                let mut s = format!("{}", *vec_iter.next().unwrap());
-
-                for e in vec_iter {
-                    s = s + ~" " + format!("{}", *e);
-                }
-
-                write!(f.buf, "({})", s)
+                write!(f.buf, "({})", *vec)
             },
             Leaf(ref val) => write!(f.buf, "{}", *val)
         }
+    }
+}
+
+impl<T: Show> Show for ~[Tree<T>] {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        let mut vec_iter = self.iter();
+        let mut s = format!("{}", *vec_iter.next().unwrap());
+
+        for e in vec_iter {
+            s = s + ~" " + format!("{}", *e);
+        }
+
+        write!(f.buf, "{}", s)
     }
 }
