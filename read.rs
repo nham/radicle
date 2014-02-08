@@ -4,7 +4,7 @@ use std::iter::Peekable;
 use super::{Expr, Exprs, MoveItems, Atom, List};
 
 /// Intermediate representation after tokenization and before it gets read into
-/// and expression.
+/// an expression.
 pub type TokenStream = Peekable<~str, MoveItems<~str>>;
 
 
