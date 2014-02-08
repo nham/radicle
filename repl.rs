@@ -8,23 +8,6 @@ use Atom = tree::Leaf;
 use List = tree::Branch;
 
 pub fn do_repl() {
-    /*
-    let mut stdin = BufferedReader::new(stdin());
-    let mut iter = stdin.lines();
-    loop {
-        print!("repl> ");
-        stdio::flush();
-        let line = iter.next();
-
-        if line.is_none() {
-            println!("its NONE");
-            break;
-        } else {
-            print!(" {}", line.unwrap());
-        }
-    }
-    */
-
     let env = Environment { parent: None, bindings: HashMap::new() };
     let mut stdin = BufferedReader::new(stdin());
     print!("repl> ");
