@@ -3,10 +3,10 @@ use std::io::stdin;
 use std::io::stdio;
 
 use eval::eval;
-use super::{HashMap, Environment, read_eval};
+use super::{Environment, read_eval};
 
 pub fn do_repl() {
-    let env = Environment { parent: None, bindings: HashMap::new() };
+    let env = Environment::new();
     let mut stdin = BufferedReader::new(stdin());
     print!("repl> ");
     stdio::flush();

@@ -3,7 +3,7 @@ use super::{HashMap, Environment, Nil, Atom, List};
 
 #[test]
 fn test_eval_symbol() {
-    let mut env = Environment{parent: None, bindings: HashMap::new()};
+    let mut env = Environment::new();
 
     // symbol not found in env should be eval err
     let foo = Atom(~"foo");
@@ -22,13 +22,13 @@ fn test_eval_symbol() {
 
 #[test]
 fn test_eval_empty_list() {
-    let env = Environment{parent: None, bindings: HashMap::new()};
+    let env = Environment::new();
     assert!( eval(List(~[]), &env).is_err() );
 }
 
 #[test]
 fn test_eval_quote() {
-    let mut env = Environment{parent: None, bindings: HashMap::new()};
+    let mut env = Environment::new();
 
     let nil = List(~[]);
     let foo = Atom(~"foo");
@@ -58,7 +58,7 @@ fn test_eval_quote() {
 
 #[test]
 fn test_eval_atom() {
-    let env = Environment{parent: None, bindings: HashMap::new()};
+    let env = Environment::new();
 
     let foo = Atom(~"foo");
     let bar = Atom(~"bar");
@@ -85,7 +85,8 @@ fn test_eval_atom() {
 
 #[test]
 fn test_eval_eq() {
-    let env = Environment{parent: None, bindings: HashMap::new()};
+    let env = Environment::new();
+
     let foo = Atom(~"foo");
     let bar = Atom(~"bar");
     let nil = List(~[]);
@@ -112,7 +113,7 @@ fn test_eval_eq() {
 
 #[test]
 fn test_eval_car() {
-    let env = Environment{parent: None, bindings: HashMap::new()};
+    let env = Environment::new();
 
     let foo = Atom(~"foo");
     let bar = Atom(~"bar");
@@ -138,7 +139,7 @@ fn test_eval_car() {
 
 #[test]
 fn test_eval_cdr() {
-    let env = Environment{parent: None, bindings: HashMap::new()};
+    let env = Environment::new();
 
     let foo = Atom(~"foo");
     let bar = Atom(~"bar");
@@ -165,7 +166,7 @@ fn test_eval_cdr() {
 
 #[test]
 fn test_eval_cons() {
-    let env = Environment{parent: None, bindings: HashMap::new()};
+    let env = Environment::new();
 
     let foo = Atom(~"foo");
     let bar = Atom(~"bar");
@@ -186,7 +187,7 @@ fn test_eval_cons() {
 
 #[test]
 fn test_eval_cond() {
-    let env = Environment{parent: None, bindings: HashMap::new()};
+    let env = Environment::new();
 
     let foo = Atom(~"foo");
     let bar = Atom(~"bar");

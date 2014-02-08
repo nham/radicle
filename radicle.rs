@@ -24,7 +24,7 @@ pub mod read;
 mod test;
 
 fn main() {
-    let globenv = Environment { parent: None, bindings: HashMap::new() };
+    let globenv = Environment::new();
 
     let args = os::args();
     if args.len() == 1 {
@@ -106,6 +106,10 @@ pub struct Environment<'a> {
 }
 
 impl<'a> Environment<'a> {
+    fn new() -> Environment<'a> {
+        Environment { parent: None, bindings: HashMap::new() }
+    }
+
     fn find(&'a self, key: &~str) -> Option<&'a Expr> {
         if self.bindings.contains_key(key) {
             self.bindings.find(key)
