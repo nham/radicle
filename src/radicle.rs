@@ -75,7 +75,7 @@ pub fn read_eval<'a>(s: &str, mut env: Env<'a>) {
         let eval_help = |env: Env<'a>, expr| {
             let res = eval(env.clone(), expr);
                 match res {
-                    Ok(ref x) => { println!("{}", *x); env },
+                    Ok( (env, expr) ) => { println!("{}", expr); env },
                     Err(ref x) => { println!("\nError: {}", *x); env }
                 }
         };
