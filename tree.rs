@@ -49,8 +49,8 @@ impl<T> Tree<T> {
 }
 
 impl<T: Show> Show for Tree<T> {
-    fn fmt(v: &Tree<T>, f: &mut Formatter) -> Result {
-        match *v {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        match *self {
             Branch(ref vec) => {
                 let mut vec_iter = vec.iter();
                 let mut s = format!("{}", *vec_iter.next().unwrap());
