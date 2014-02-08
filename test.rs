@@ -1,5 +1,5 @@
 use eval::eval;
-use super::{HashMap, Environment, Atom, List};
+use super::{HashMap, Environment, Nil, Atom, List};
 
 #[test]
 fn test_eval_symbol() {
@@ -205,4 +205,10 @@ fn test_eval_cond() {
     let eval_list = eval(list, &env);
 
     assert!( eval_list.is_ok() && eval_list.unwrap().eq(&baz) );
+
+
+    let no_t_list = List(~[cond.clone(), 
+                      List(~[qfoo.clone(), qbar.clone()])]);
+    let eval_no_t_list = eval(no_t_list, &env);
+    assert!( eval_no_t_list.is_ok() && eval_no_t_list.unwrap().is_nil() );
 }

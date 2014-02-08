@@ -11,6 +11,7 @@ use std::io::File;
 use std::os;
 
 use tree::Tree;
+pub use tree::Nil;
 pub use Atom = tree::Leaf;
 pub use List = tree::Branch;
 

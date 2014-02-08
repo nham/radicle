@@ -2,11 +2,19 @@ use std::fmt::{Show, Formatter, Result};
 
 #[deriving(Eq, Clone)]
 pub enum Tree<T> {
+    Nil,
     Leaf(T),
     Branch(~[Tree<T>])
 }
 
 impl<T> Tree<T> {
+    pub fn is_nil(&self) -> bool {
+        match *self {
+            Nil     => true,
+            _       => false
+        }
+    }
+
     pub fn is_leaf(&self) -> bool {
         match *self {
             Leaf(_) => true,
@@ -21,28 +29,28 @@ impl<T> Tree<T> {
     pub fn get_ref_leaf<'a>(&'a self) -> &'a T {
         match *self {
             Leaf(ref val) => val,
-            _         => fail!("called Tree<T>::get_ref_leaf() on Branch()"),
+            _         => fail!("called Tree<T>::get_ref_leaf() on non-Leaf"),
         }
     }
 
     pub fn get_ref_branch<'a>(&'a self) -> &'a ~[Tree<T>] {
         match *self {
             Branch(ref val) => val,
-            _         => fail!("called Tree<T>::get_ref_branch() on Leaf()"),
+            _         => fail!("called Tree<T>::get_ref_branch() on non-Branch"),
         }
     }
 
     pub fn unwrap_leaf(self) -> T {
         match self {
             Leaf(val) => val,
-            _         => fail!("called Tree<T>::unwrap_leaf() on Branch()"),
+            _         => fail!("called Tree<T>::unwrap_leaf() on non-Leaf"),
         }
     }
 
     pub fn unwrap_branch(self) -> ~[Tree<T>] {
         match self {
             Branch(val) => val,
-            _         => fail!("called Tree<T>::unwrap_branch() on Leaf()"),
+            _         => fail!("called Tree<T>::unwrap_branch() on non-Branch"),
         }
     }
 
@@ -54,7 +62,8 @@ impl<T: Show> Show for Tree<T> {
             Branch(ref vec) => {
                 write!(f.buf, "({})", *vec)
             },
-            Leaf(ref val) => write!(f.buf, "{}", *val)
+            Leaf(ref val) => write!(f.buf, "{}", *val),
+            Nil => write!(f.buf, ""),
         }
     }
 }

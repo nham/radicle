@@ -1,9 +1,10 @@
-use super::{Expr, Environment, HashMap, MoveItems, Atom, List};
+use super::{Expr, Environment, HashMap, MoveItems, Nil, Atom, List};
 
 /// The heart and soul of Radicle.
 pub fn eval<'a>(expr: Expr, env: &'a Environment<'a>) -> Result<Expr, ~str> {
     debug!("\n :: Entered eval, expr = \n{}\n", expr);
     match expr {
+        Nil => Ok( Nil ),
         Atom(ref s) => {
             let res = env.find_copy(s);
             if res.is_none() {
@@ -186,7 +187,7 @@ fn eval_cond(vec: ~[Expr], env: &Environment) -> Result<Expr, ~str> {
         i += 1;
     }
 
-    Err(~"No branch of `cond` evaluated to true. Don't think this is an error, though. Need to decide how to handle.")
+    Ok( Nil )
 }
 
 
