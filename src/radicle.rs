@@ -12,7 +12,7 @@ pub use tree::Nil;
 pub use Atom = tree::Leaf;
 pub use List = tree::Branch;
 
-use eval::eval;
+use eval::{eval, eval_all};
 use read::read;
 
 pub mod tree;
@@ -73,10 +73,10 @@ pub fn read_eval(s: &str, env: &Env) {
     if parsed.is_ok() {
         println!("Parsed: {}", parsed);
 
-        for expr in parsed.unwrap().move_iter() {
-            match eval(expr, env) {
-                Ok(x) => { println!("\nEvaled: {}", x); },
-                Err(x) => { println!("\nEval error: {}", x); }
+        for res in eval_all(parsed.unwrap(), env).iter() {
+            match *res {
+                Ok(ref x) => { println!("\nEvaled: {}", *x); },
+                Err(ref x) => { println!("\nEval error: {}", *x); }
             }
         }
     } else {

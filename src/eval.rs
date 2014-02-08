@@ -1,4 +1,13 @@
-use super::{Expr, Env, HashMap, MoveItems, Nil, Atom, List};
+use super::{Expr, Exprs, Env, HashMap, MoveItems, Nil, Atom, List};
+
+pub fn eval_all<'a>(exprs: Exprs, mut env: &'a Env<'a>) -> ~[Result<Expr, ~str>] {
+    let mut res = ~[];
+    for expr in exprs.move_iter() {
+        res.push( eval(expr, env) );
+    }
+
+    res
+}
 
 /// The heart and soul of Radicle.
 pub fn eval<'a>(expr: Expr, env: &'a Env<'a>) -> Result<Expr, ~str> {
