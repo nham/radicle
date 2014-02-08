@@ -1,7 +1,7 @@
-use super::{Expr, Environment, HashMap, MoveItems, Nil, Atom, List};
+use super::{Expr, Env, HashMap, MoveItems, Nil, Atom, List};
 
 /// The heart and soul of Radicle.
-pub fn eval<'a>(expr: Expr, env: &'a Environment<'a>) -> Result<Expr, ~str> {
+pub fn eval<'a>(expr: Expr, env: &'a Env<'a>) -> Result<Expr, ~str> {
     debug!("\n :: Entered eval, expr = \n{}\n", expr);
     match expr {
         Nil => Ok( Nil ),
@@ -59,8 +59,8 @@ pub fn eval<'a>(expr: Expr, env: &'a Environment<'a>) -> Result<Expr, ~str> {
                     return Err( new_binds.unwrap_err() );
                 }
 
-                let new_env = Environment { parent: Some(env), 
-                                            bindings: new_binds.unwrap() };
+                let new_env = Env { parent: Some(env), 
+                                    bindings: new_binds.unwrap() };
 
                 debug!("\n :: arguments have been passed into environment, evaling lambda body\n");
                 eval(lambda_body, &new_env)
@@ -70,7 +70,7 @@ pub fn eval<'a>(expr: Expr, env: &'a Environment<'a>) -> Result<Expr, ~str> {
     }
 }
 
-fn eval_atom(vec: ~[Expr], env: &Environment) -> Result<Expr, ~str> {
+fn eval_atom(vec: ~[Expr], env: &Env) -> Result<Expr, ~str> {
     if vec.len() != 2 {
         Err(~"`atom` expects exactly one argument.")
     } else {
@@ -86,7 +86,7 @@ fn eval_atom(vec: ~[Expr], env: &Environment) -> Result<Expr, ~str> {
 }
 
 
-fn eval_eq(vec: ~[Expr], env: &Environment) -> Result<Expr, ~str> {
+fn eval_eq(vec: ~[Expr], env: &Env) -> Result<Expr, ~str> {
 
     if vec.len() != 3 {
         Err(~"`eq` expects exactly two arguments.")
@@ -105,7 +105,7 @@ fn eval_eq(vec: ~[Expr], env: &Environment) -> Result<Expr, ~str> {
 }
 
 
-fn eval_car(vec: ~[Expr], env: &Environment) -> Result<Expr, ~str> {
+fn eval_car(vec: ~[Expr], env: &Env) -> Result<Expr, ~str> {
 
     if vec.len() != 2 {
         Err(~"`car` expects exactly one argument.")
@@ -122,7 +122,7 @@ fn eval_car(vec: ~[Expr], env: &Environment) -> Result<Expr, ~str> {
     }
 }
 
-fn eval_cdr(vec: ~[Expr], env: &Environment) -> Result<Expr, ~str> {
+fn eval_cdr(vec: ~[Expr], env: &Env) -> Result<Expr, ~str> {
 
     if vec.len() != 2 {
         Err(~"`cdr` expects exactly one argument.")
@@ -140,7 +140,7 @@ fn eval_cdr(vec: ~[Expr], env: &Environment) -> Result<Expr, ~str> {
     }
 }
 
-fn eval_cons(vec: ~[Expr], env: &Environment) -> Result<Expr, ~str> {
+fn eval_cons(vec: ~[Expr], env: &Env) -> Result<Expr, ~str> {
 
     if vec.len() != 3 {
         Err(~"`cons` expects exactly two arguments.")
@@ -159,7 +159,7 @@ fn eval_cons(vec: ~[Expr], env: &Environment) -> Result<Expr, ~str> {
     }
 }
 
-fn eval_cond(vec: ~[Expr], env: &Environment) -> Result<Expr, ~str> {
+fn eval_cond(vec: ~[Expr], env: &Env) -> Result<Expr, ~str> {
     let mut i = 1;
     while i < vec.len() {
         if !vec[i].is_list() {
@@ -245,7 +245,7 @@ fn is_symbol(op: &str, expr: &Expr) -> bool {
     }
 }
 
-fn prepare_lambda(vec: ~[Expr], env: &Environment)
+fn prepare_lambda(vec: ~[Expr], env: &Env)
     -> Result<(~[Expr], HashMap<~str, Expr>, MoveItems<Expr>), ~str> {
 
     let mut vec_iter = vec.move_iter();
@@ -309,7 +309,7 @@ fn prepare_lambda(vec: ~[Expr], env: &Environment)
 /// takes a vector of expressions and a vector of Atoms, evals each expression
 /// and inserts it into a provided hashMap (with the Atom as the key)
 fn populate_bindings(mut args: MoveItems<Expr>, params: ~[Expr],
-     env: &Environment, mut bindings: HashMap<~str, Expr>) 
+     env: &Env, mut bindings: HashMap<~str, Expr>) 
     -> Result<HashMap<~str, Expr>, ~str> {
 
     let mut param_iter = params.move_iter();

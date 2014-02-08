@@ -42,7 +42,7 @@ pub fn interpret_file(fname: ~str) {
             println!("{}", contents.unwrap_err());
         } else {
             let data = str::from_utf8_owned(contents.unwrap());
-            read_eval(data.unwrap(), &Environment::new());
+            read_eval(data.unwrap(), &Env::new());
         }
     } else {
         println!("radicle: can't open file {}", fname);
@@ -54,7 +54,7 @@ pub fn repl() {
     use std::io::stdin;
     use std::io::stdio;
 
-    let env = Environment::new();
+    let env = Env::new();
     let mut stdin = BufferedReader::new(stdin());
     print!("repl> ");
     stdio::flush();
@@ -68,7 +68,7 @@ pub fn repl() {
 
 
 /// A convenience function that calls read & eval and displays their results
-pub fn read_eval(s: &str, env: &Environment) {
+pub fn read_eval(s: &str, env: &Env) {
     let parsed = read(s);
     if parsed.is_ok() {
         println!("Parsed: {}", parsed);
@@ -90,14 +90,14 @@ pub type Expr = Tree<~str>;
 pub type Exprs = ~[Expr];
 
 
-pub struct Environment<'a> {
-    parent: Option<&'a Environment<'a>>,
+pub struct Env<'a> {
+    parent: Option<&'a Env<'a>>,
     bindings: HashMap<~str, Expr>,
 }
 
-impl<'a> Environment<'a> {
-    fn new() -> Environment<'a> {
-        Environment { parent: None, bindings: HashMap::new() }
+impl<'a> Env<'a> {
+    fn new() -> Env<'a> {
+        Env { parent: None, bindings: HashMap::new() }
     }
 
     fn find(&'a self, key: &~str) -> Option<&'a Expr> {
