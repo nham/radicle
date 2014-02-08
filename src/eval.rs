@@ -1,16 +1,9 @@
-use super::{Expr, Exprs, Env, HashMap, MoveItems, Nil, Atom, List};
+use super::{Expr, Env, HashMap, MoveItems, Nil, Atom, List};
 
-pub fn eval_all<'a>(exprs: Exprs, mut env: &'a Env<'a>) -> ~[Result<Expr, ~str>] {
-    let mut res = ~[];
-    for expr in exprs.move_iter() {
-        res.push( eval(expr, env) );
-    }
-
-    res
-}
+type EvalResult = Result<Expr, ~str>;
 
 /// The heart and soul of Radicle.
-pub fn eval<'a>(expr: Expr, env: &'a Env<'a>) -> Result<Expr, ~str> {
+pub fn eval<'a>(expr: Expr, env: &'a Env<'a>) -> EvalResult {
     debug!("\n :: Entered eval, expr = \n{}\n", expr);
     match expr {
         Nil => Ok( Nil ),
@@ -79,12 +72,12 @@ pub fn eval<'a>(expr: Expr, env: &'a Env<'a>) -> Result<Expr, ~str> {
     }
 }
 
-fn eval_atom(vec: ~[Expr], env: &Env) -> Result<Expr, ~str> {
+fn eval_atom(vec: ~[Expr], env: &Env) -> EvalResult {
     if vec.len() != 2 {
         Err(~"`atom` expects exactly one argument.")
     } else {
         result_bind(eval(vec[1], env), 
-                    |val: Expr| -> Result<Expr, ~str> {
+                    |val: Expr| -> EvalResult {
                         if val.is_atom() || val.is_empty_list() {
                             Ok( Atom(~"t") )
                         } else {
@@ -95,14 +88,14 @@ fn eval_atom(vec: ~[Expr], env: &Env) -> Result<Expr, ~str> {
 }
 
 
-fn eval_eq(vec: ~[Expr], env: &Env) -> Result<Expr, ~str> {
+fn eval_eq(vec: ~[Expr], env: &Env) -> EvalResult {
 
     if vec.len() != 3 {
         Err(~"`eq` expects exactly two arguments.")
     } else {
         result_fmap2(eval(vec[1].clone(), env), 
                      eval(vec[2], env), 
-             |val1: Expr, val2: Expr| -> Result<Expr, ~str> {
+             |val1: Expr, val2: Expr| -> EvalResult {
                 if (val1.is_empty_list() && val2.is_empty_list())
                    || (val1.is_atom() && val2.is_atom() && val1.eq(&val2)) {
                     Ok( Atom(~"t") )
@@ -114,13 +107,13 @@ fn eval_eq(vec: ~[Expr], env: &Env) -> Result<Expr, ~str> {
 }
 
 
-fn eval_car(vec: ~[Expr], env: &Env) -> Result<Expr, ~str> {
+fn eval_car(vec: ~[Expr], env: &Env) -> EvalResult {
 
     if vec.len() != 2 {
         Err(~"`car` expects exactly one argument.")
     } else {
         result_bind(eval(vec[1], env), 
-                    |val: Expr| -> Result<Expr, ~str> {
+                    |val: Expr| -> EvalResult {
                         if val.is_list() && !val.is_empty_list() {
                             let list = val.unwrap_branch();
                             Ok( list[0] )
@@ -131,13 +124,13 @@ fn eval_car(vec: ~[Expr], env: &Env) -> Result<Expr, ~str> {
     }
 }
 
-fn eval_cdr(vec: ~[Expr], env: &Env) -> Result<Expr, ~str> {
+fn eval_cdr(vec: ~[Expr], env: &Env) -> EvalResult {
 
     if vec.len() != 2 {
         Err(~"`cdr` expects exactly one argument.")
     } else {
         result_bind(eval(vec[1], env), 
-                    |val: Expr| -> Result<Expr, ~str> {
+                    |val: Expr| -> EvalResult {
                         if val.is_list() && !val.is_empty_list() {
                             let mut list = val.unwrap_branch();
                             list.shift();
@@ -149,14 +142,14 @@ fn eval_cdr(vec: ~[Expr], env: &Env) -> Result<Expr, ~str> {
     }
 }
 
-fn eval_cons(vec: ~[Expr], env: &Env) -> Result<Expr, ~str> {
+fn eval_cons(vec: ~[Expr], env: &Env) -> EvalResult {
 
     if vec.len() != 3 {
         Err(~"`cons` expects exactly two arguments.")
     } else {
         result_fmap2(eval(vec[1].clone(), env), 
                      eval(vec[2], env), 
-             |val1: Expr, val2: Expr| -> Result<Expr, ~str> {
+             |val1: Expr, val2: Expr| -> EvalResult {
                 if val2.is_list() {
                     let mut list = val2.unwrap_branch();
                     list.unshift(val1);
@@ -168,7 +161,7 @@ fn eval_cons(vec: ~[Expr], env: &Env) -> Result<Expr, ~str> {
     }
 }
 
-fn eval_cond(vec: ~[Expr], env: &Env) -> Result<Expr, ~str> {
+fn eval_cond(vec: ~[Expr], env: &Env) -> EvalResult {
     let mut i = 1;
     while i < vec.len() {
         if !vec[i].is_list() {

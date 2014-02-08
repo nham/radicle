@@ -12,7 +12,7 @@ pub use tree::Nil;
 pub use Atom = tree::Leaf;
 pub use List = tree::Branch;
 
-use eval::{eval, eval_all};
+use eval::eval;
 use read::read;
 
 pub mod tree;
@@ -54,7 +54,7 @@ pub fn repl() {
     use std::io::stdin;
     use std::io::stdio;
 
-    let env = Env::new();
+    let mut env = Env::new();
     let mut stdin = BufferedReader::new(stdin());
     print!("repl> ");
     stdio::flush();
@@ -68,16 +68,19 @@ pub fn repl() {
 
 
 /// A convenience function that calls read & eval and displays their results
-pub fn read_eval(s: &str, env: &Env) {
+pub fn read_eval(s: &str, mut env: &Env) {
     let parsed = read(s);
     if parsed.is_ok() {
+        let mut expr_it = parsed.unwrap().move_iter();
+        let eval_help = |env, expr| {
+            let res = eval(expr, env);
+                match res {
+                    Ok(ref x) => { println!("{}", *x); env },
+                    Err(ref x) => { println!("\nError: {}", *x); env }
+                }
+        };
+         expr_it.fold(env, eval_help);
 
-        for res in eval_all(parsed.unwrap(), env).iter() {
-            match *res {
-                Ok(ref x) => { println!("{}", *x); },
-                Err(ref x) => { println!("\nError: {}", *x); }
-            }
-        }
     } else {
         println!("\nParse error: {}", parsed.unwrap_err());
     }
