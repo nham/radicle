@@ -68,11 +68,11 @@ pub fn repl() {
 
 
 /// A convenience function that calls read & eval and displays their results
-pub fn read_eval<'a>(s: &str, mut env: Env<'a>) {
+pub fn read_eval(s: &str, mut env: Env) {
     let parsed = read(s);
     if parsed.is_ok() {
         let mut expr_it = parsed.unwrap().move_iter();
-        let eval_help = |env: Env<'a>, expr| {
+        let eval_help = |env: Env, expr| {
             let res = eval(env.clone(), expr);
                 match res {
                     Ok( (env, expr) ) => { println!("{}", expr); env },
@@ -93,38 +93,17 @@ pub type Exprs = ~[Expr];
 
 
 #[deriving(Clone)]
-pub struct Env<'a> {
-    parent: Option<&'a Env<'a>>,
+pub struct Env {
     bindings: HashMap<~str, Expr>,
 }
 
-impl<'a> Env<'a> {
-    fn new() -> Env<'a> {
-        Env { parent: None, bindings: HashMap::new() }
-    }
-
-    fn find(&'a self, key: &~str) -> Option<&'a Expr> {
-        if self.bindings.contains_key(key) {
-            self.bindings.find(key)
-        } else {
-            if self.parent.is_some() {
-                self.parent.unwrap().find(key)
-            } else {
-                None
-            }
-        }
+impl Env {
+    fn new() -> Env {
+        Env { bindings: HashMap::new() }
     }
 
     fn find_copy(&self, key: &~str) -> Option<Expr> {
-        if self.bindings.contains_key(key) {
-            self.bindings.find_copy(key)
-        } else {
-            if self.parent.is_some() {
-                self.parent.unwrap().find_copy(key)
-            } else {
-                None
-            }
-        }
+        self.bindings.find_copy(key)
     }
 }
 

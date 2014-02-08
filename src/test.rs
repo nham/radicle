@@ -13,11 +13,7 @@ fn test_eval_symbol() {
 
     env.bindings.insert(~"foo", bar.clone());
     let foo_eval = eval(env.clone(), foo.clone());
-    assert!( foo_eval.is_ok() && foo_eval.unwrap().eq(&bar) );
-
-    let env2 = Env{parent: Some(&env), bindings: HashMap::new()};
-    let foo2_eval = eval(env2, foo.clone());
-    assert!( foo2_eval.is_ok() && foo2_eval.unwrap().eq(&bar) );
+    assert!( foo_eval.is_ok() && foo_eval.unwrap().n1().eq(&bar) );
 }
 
 #[test]
@@ -36,28 +32,28 @@ fn test_eval_quote() {
 
     let qnil = List(~[quote.clone(), nil.clone()]);
     let qnil_eval = eval(env.clone(), qnil);
-    assert!( qnil_eval.is_ok() && qnil_eval.unwrap().eq(&nil) );
+    assert!( qnil_eval.is_ok() && qnil_eval.unwrap().n1().eq(&nil) );
 
     let qfoo = List(~[quote.clone(), foo.clone()]);
     let qfoo2 = qfoo.clone();
     let qfoo_eval = eval(env.clone(), qfoo);
-    assert!( qfoo_eval.is_ok() && qfoo_eval.unwrap().eq(&foo) );
+    assert!( qfoo_eval.is_ok() && qfoo_eval.unwrap().n1().eq(&foo) );
 
     // "(quote foo)" should evaluate to "foo" regardless of what the symbol foo is
     // bound to in the environment
     env.bindings.insert(~"foo", bar.clone());
     let qfoo2_eval = eval(env.clone(), qfoo2);
-    assert!( qfoo2_eval.is_ok() && qfoo2_eval.unwrap().eq(&foo) );
+    assert!( qfoo2_eval.is_ok() && qfoo2_eval.unwrap().n1().eq(&foo) );
 
     let list = List(~[foo.clone(), bar.clone(), Atom(~"baz")]);
     let qlist = List(~[quote.clone(), list.clone()]);
     let qlist_eval = eval(env, qlist);
-    assert!( qlist_eval.is_ok() && qlist_eval.unwrap().eq(&list) );
+    assert!( qlist_eval.is_ok() && qlist_eval.unwrap().n1().eq(&list) );
 }
 
 #[test]
 fn test_eval_atom() {
-    let env = Env::new();
+    let mut env = Env::new();
 
     let foo = Atom(~"foo");
     let bar = Atom(~"bar");
@@ -70,21 +66,21 @@ fn test_eval_atom() {
     let qnil = List(~[quote.clone(), nil.clone()]);
 
     let qfoo_eval = eval(env.clone(), List(~[atom.clone(), qfoo]));
-    assert!( qfoo_eval.is_ok() && qfoo_eval.unwrap().eq(&t) );
+    assert!( qfoo_eval.is_ok() && qfoo_eval.unwrap().n1().eq(&t) );
 
     let qnil_eval = eval(env.clone(), List(~[atom.clone(), qnil]));
-    assert!( qnil_eval.is_ok() && qnil_eval.unwrap().eq(&t) );
+    assert!( qnil_eval.is_ok() && qnil_eval.unwrap().n1().eq(&t) );
 
     let list = List(~[foo.clone(), bar.clone()]);
     let qlist = List(~[quote.clone(), list.clone()]);
     let qlist_eval = eval(env, List(~[atom.clone(), qlist]));
-    assert!( qlist_eval.is_ok() && qlist_eval.unwrap().eq(&nil) );
+    assert!( qlist_eval.is_ok() && qlist_eval.unwrap().n1().eq(&nil) );
 
 }
 
 #[test]
 fn test_eval_eq() {
-    let env = Env::new();
+    let mut env = Env::new();
 
     let foo = Atom(~"foo");
     let bar = Atom(~"bar");
@@ -103,16 +99,16 @@ fn test_eval_eq() {
     assert!( eq_raw_sym_eval.is_err() );
 
     let eq_qnil_eval = eval(env.clone(), List(~[eq.clone(), qnil.clone(), qnil.clone()]));
-    assert!( eq_qnil_eval.is_ok() && eq_qnil_eval.unwrap().eq(&t) );
+    assert!( eq_qnil_eval.is_ok() && eq_qnil_eval.unwrap().n1().eq(&t) );
 
     let eq_qfoo_eval = eval(env, List(~[eq.clone(), qfoo.clone(), qfoo.clone()]));
-    assert!( eq_qfoo_eval.is_ok() && eq_qfoo_eval.unwrap().eq(&t) );
+    assert!( eq_qfoo_eval.is_ok() && eq_qfoo_eval.unwrap().n1().eq(&t) );
 
 }
 
 #[test]
 fn test_eval_car() {
-    let env = Env::new();
+    let mut env = Env::new();
 
     let foo = Atom(~"foo");
     let bar = Atom(~"bar");
@@ -132,13 +128,13 @@ fn test_eval_car() {
     let list = List(~[foo.clone(), bar.clone()]);
     let qlist = List(~[quote.clone(), list.clone()]);
     let qlist_eval = eval(env, List(~[car.clone(), qlist]));
-    assert!( qlist_eval.is_ok() && qlist_eval.unwrap().eq(&foo) );
+    assert!( qlist_eval.is_ok() && qlist_eval.unwrap().n1().eq(&foo) );
 
 }
 
 #[test]
 fn test_eval_cdr() {
-    let env = Env::new();
+    let mut env = Env::new();
 
     let foo = Atom(~"foo");
     let bar = Atom(~"bar");
@@ -160,12 +156,12 @@ fn test_eval_cdr() {
     let qlist_eval = eval(env, List(~[cdr.clone(), qlist]));
 
     let list_foo = List(~[bar.clone()]);
-    assert!( qlist_eval.is_ok() && qlist_eval.unwrap().eq(&list_foo) );
+    assert!( qlist_eval.is_ok() && qlist_eval.unwrap().n1().eq(&list_foo) );
 }
 
 #[test]
 fn test_eval_cons() {
-    let env = Env::new();
+    let mut env = Env::new();
 
     let foo = Atom(~"foo");
     let bar = Atom(~"bar");
@@ -181,12 +177,12 @@ fn test_eval_cons() {
     let qfoo = List(~[quote.clone(), foo.clone()]);
     let barlist_eval = eval(env, List(~[cons.clone(), qfoo.clone(), qbar_list.clone()]));
     let foobar_list = List(~[foo.clone(), bar.clone()]);
-    assert!( barlist_eval.is_ok() && barlist_eval.unwrap().eq(&foobar_list) );
+    assert!( barlist_eval.is_ok() && barlist_eval.unwrap().n1().eq(&foobar_list) );
 }
 
 #[test]
 fn test_eval_cond() {
-    let env = Env::new();
+    let mut env = Env::new();
 
     let foo = Atom(~"foo");
     let bar = Atom(~"bar");
@@ -204,11 +200,11 @@ fn test_eval_cond() {
 
     let eval_list = eval(env.clone(), list);
 
-    assert!( eval_list.is_ok() && eval_list.unwrap().eq(&baz) );
+    assert!( eval_list.is_ok() && eval_list.unwrap().n1().eq(&baz) );
 
 
     let no_t_list = List(~[cond.clone(), 
                       List(~[qfoo.clone(), qbar.clone()])]);
     let eval_no_t_list = eval(env, no_t_list);
-    assert!( eval_no_t_list.is_ok() && eval_no_t_list.unwrap().is_nil() );
+    assert!( eval_no_t_list.is_ok() && eval_no_t_list.unwrap().n1().is_nil() );
 }

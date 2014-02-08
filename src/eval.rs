@@ -1,10 +1,10 @@
 use super::{Expr, Env, HashMap, MoveItems, Nil, Atom, List};
 
-type EnvExpr<'a> = (Env<'a>, Expr);
-type EvalResult<'a> = Result<EnvExpr<'a>, ~str>;
+type EnvExpr = (Env, Expr);
+type EvalResult = Result<EnvExpr, ~str>;
 
 /// The heart and soul of Radicle.
-pub fn eval<'a>(env: Env<'a>, expr: Expr) -> EvalResult<'a> {
+pub fn eval(mut env: Env, expr: Expr) -> EvalResult {
     debug!("\n :: Entered eval, expr = \n{}\n", expr);
     match expr {
         Nil => Ok( (env, Nil) ),
@@ -62,23 +62,24 @@ pub fn eval<'a>(env: Env<'a>, expr: Expr) -> EvalResult<'a> {
                     return Err( new_binds.unwrap_err() );
                 }
 
-                let new_env = Env { parent: Some(& env), 
-                                    bindings: new_binds.unwrap() };
+                for (k, v) in new_binds.unwrap().move_iter() {
+                    env.bindings.insert(k, v);
+                }
 
                 debug!("\n :: arguments have been passed into environment, evaling lambda body\n");
-                eval(new_env, lambda_body)
+                eval(env, lambda_body)
 
             }
         }
     }
 }
 
-fn eval_atom<'a>(env: Env<'a>, vec: ~[Expr]) -> EvalResult<'a> {
+fn eval_atom(env: Env, vec: ~[Expr]) -> EvalResult {
     if vec.len() != 2 {
         Err(~"`atom` expects exactly one argument.")
     } else {
         result_bind(eval(env, vec[1]), 
-                    |res: EnvExpr<'a>| -> EvalResult<'a> {
+                    |res: EnvExpr| -> EvalResult {
                         let env = res.clone().n0();
                         let val = res.n1();
                         if val.is_atom() || val.is_empty_list() {
@@ -91,14 +92,14 @@ fn eval_atom<'a>(env: Env<'a>, vec: ~[Expr]) -> EvalResult<'a> {
 }
 
 
-fn eval_eq<'a>(env: Env<'a>, vec: ~[Expr]) -> EvalResult<'a> {
+fn eval_eq(env: Env, vec: ~[Expr]) -> EvalResult {
 
     if vec.len() != 3 {
         Err(~"`eq` expects exactly two arguments.")
     } else {
         result_fmap2(eval(env.clone(), vec[1].clone()), 
                      eval(env, vec[2]), 
-             |res1: EnvExpr<'a>, res2: EnvExpr<'a>| -> EvalResult<'a> {
+             |res1: EnvExpr, res2: EnvExpr| -> EvalResult {
                 let env = res1.clone().n0();
                  let val1 = res1.n1();
                  let val2 = res2.n1();
@@ -113,13 +114,13 @@ fn eval_eq<'a>(env: Env<'a>, vec: ~[Expr]) -> EvalResult<'a> {
 }
 
 
-fn eval_car<'a>(env: Env<'a>, vec: ~[Expr]) -> EvalResult<'a> {
+fn eval_car(env: Env, vec: ~[Expr]) -> EvalResult {
 
     if vec.len() != 2 {
         Err(~"`car` expects exactly one argument.")
     } else {
         result_bind(eval(env, vec[1]), 
-                    |res: EnvExpr<'a>| -> EvalResult<'a> {
+                    |res: EnvExpr| -> EvalResult {
                         let env = res.clone().n0();
                         let val = res.n1();
                         if val.is_list() && !val.is_empty_list() {
@@ -132,13 +133,13 @@ fn eval_car<'a>(env: Env<'a>, vec: ~[Expr]) -> EvalResult<'a> {
     }
 }
 
-fn eval_cdr<'a>(env: Env<'a>, vec: ~[Expr]) -> EvalResult<'a> {
+fn eval_cdr(env: Env, vec: ~[Expr]) -> EvalResult {
 
     if vec.len() != 2 {
         Err(~"`cdr` expects exactly one argument.")
     } else {
         result_bind(eval(env.clone(), vec[1]), 
-                    |res: EnvExpr<'a>| -> EvalResult<'a> {
+                    |res: EnvExpr| -> EvalResult {
                         let val = res.n1();
                         if val.is_list() && !val.is_empty_list() {
                             let mut list = val.unwrap_branch();
@@ -151,14 +152,14 @@ fn eval_cdr<'a>(env: Env<'a>, vec: ~[Expr]) -> EvalResult<'a> {
     }
 }
 
-fn eval_cons<'a>(env: Env<'a>, vec: ~[Expr]) -> EvalResult<'a> {
+fn eval_cons(env: Env, vec: ~[Expr]) -> EvalResult {
 
     if vec.len() != 3 {
         Err(~"`cons` expects exactly two arguments.")
     } else {
         result_fmap2(eval(env.clone(), vec[1].clone()), 
                      eval(env, vec[2]), 
-            |res1: EnvExpr<'a>, res2: EnvExpr<'a>| -> EvalResult<'a> {
+            |res1: EnvExpr, res2: EnvExpr| -> EvalResult {
                 let env = res1.clone().n0();
                 let val1 = res1.n1();
                 let val2 = res2.n1();
@@ -173,7 +174,7 @@ fn eval_cons<'a>(env: Env<'a>, vec: ~[Expr]) -> EvalResult<'a> {
     }
 }
 
-fn eval_cond<'a>(env: Env<'a>, vec: ~[Expr]) -> EvalResult<'a> {
+fn eval_cond(env: Env, vec: ~[Expr]) -> EvalResult {
     let mut i = 1;
     while i < vec.len() {
         if !vec[i].is_list() {
@@ -190,7 +191,7 @@ fn eval_cond<'a>(env: Env<'a>, vec: ~[Expr]) -> EvalResult<'a> {
             if res.is_err() {
                 return res;
             } else {
-                let val = res.unwrap().n1();
+                let val = if_ok!(res).n1();
 
                 if val.eq( &Atom(~"t") ) {
                     return eval(env, list[1]);
