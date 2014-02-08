@@ -73,7 +73,7 @@ pub fn read_eval(s: &str, mut env: &Env) {
     if parsed.is_ok() {
         let mut expr_it = parsed.unwrap().move_iter();
         let eval_help = |env, expr| {
-            let res = eval(expr, env);
+            let res = eval(env, expr);
                 match res {
                     Ok(ref x) => { println!("{}", *x); env },
                     Err(ref x) => { println!("\nError: {}", *x); env }
