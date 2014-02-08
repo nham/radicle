@@ -42,7 +42,7 @@ pub fn interpret_file(fname: ~str) {
             println!("{}", contents.unwrap_err());
         } else {
             let data = str::from_utf8_owned(contents.unwrap());
-            read_eval(data.unwrap(), &Env::new());
+            read_eval(data.unwrap(), Env::new());
         }
     } else {
         println!("radicle: can't open file {}", fname);
@@ -59,7 +59,7 @@ pub fn repl() {
     print!("repl> ");
     stdio::flush();
     for line in stdin.lines() {
-        read_eval(line, &env);
+        read_eval(line, env.clone());
         print!("repl> ");
         stdio::flush();
     }
@@ -68,12 +68,12 @@ pub fn repl() {
 
 
 /// A convenience function that calls read & eval and displays their results
-pub fn read_eval(s: &str, mut env: &Env) {
+pub fn read_eval<'a>(s: &str, mut env: Env<'a>) {
     let parsed = read(s);
     if parsed.is_ok() {
         let mut expr_it = parsed.unwrap().move_iter();
-        let eval_help = |env, expr| {
-            let res = eval(env, expr);
+        let eval_help = |env: Env<'a>, expr| {
+            let res = eval(env.clone(), expr);
                 match res {
                     Ok(ref x) => { println!("{}", *x); env },
                     Err(ref x) => { println!("\nError: {}", *x); env }
@@ -92,6 +92,7 @@ pub type Expr = Tree<~str>;
 pub type Exprs = ~[Expr];
 
 
+#[deriving(Clone)]
 pub struct Env<'a> {
     parent: Option<&'a Env<'a>>,
     bindings: HashMap<~str, Expr>,

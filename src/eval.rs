@@ -3,7 +3,7 @@ use super::{Expr, Env, HashMap, MoveItems, Nil, Atom, List};
 type EvalResult = Result<Expr, ~str>;
 
 /// The heart and soul of Radicle.
-pub fn eval<'a>(env: &'a Env<'a>, expr: Expr) -> EvalResult {
+pub fn eval(env: Env, expr: Expr) -> EvalResult {
     debug!("\n :: Entered eval, expr = \n{}\n", expr);
     match expr {
         Nil => Ok( Nil ),
@@ -38,7 +38,7 @@ pub fn eval<'a>(env: &'a Env<'a>, expr: Expr) -> EvalResult {
             } else {
 
                 let num_args = vec.len() - 1;
-                let res = prepare_lambda(env, vec);
+                let res = prepare_lambda(env.clone(), vec);
 
                 if res.is_err() {
                     return Err( res.unwrap_err() );
@@ -56,23 +56,23 @@ pub fn eval<'a>(env: &'a Env<'a>, expr: Expr) -> EvalResult {
                     return Err(~"mismatch between number of procedure args and number of args called with.");
                 }
 
-                let new_binds = populate_bindings(args, params, env, bindings);
+                let new_binds = populate_bindings(args, params, env.clone(), bindings);
                 if new_binds.is_err() {
                     return Err( new_binds.unwrap_err() );
                 }
 
-                let new_env = Env { parent: Some(env), 
+                let new_env = Env { parent: Some(&env), 
                                     bindings: new_binds.unwrap() };
 
                 debug!("\n :: arguments have been passed into environment, evaling lambda body\n");
-                eval(&new_env, lambda_body)
+                eval(new_env, lambda_body)
 
             }
         }
     }
 }
 
-fn eval_atom(env: &Env, vec: ~[Expr]) -> EvalResult {
+fn eval_atom(env: Env, vec: ~[Expr]) -> EvalResult {
     if vec.len() != 2 {
         Err(~"`atom` expects exactly one argument.")
     } else {
@@ -88,12 +88,12 @@ fn eval_atom(env: &Env, vec: ~[Expr]) -> EvalResult {
 }
 
 
-fn eval_eq(env: &Env, vec: ~[Expr]) -> EvalResult {
+fn eval_eq(env: Env, vec: ~[Expr]) -> EvalResult {
 
     if vec.len() != 3 {
         Err(~"`eq` expects exactly two arguments.")
     } else {
-        result_fmap2(eval(env, vec[1].clone()), 
+        result_fmap2(eval(env.clone(), vec[1].clone()), 
                      eval(env, vec[2]), 
              |val1: Expr, val2: Expr| -> EvalResult {
                 if (val1.is_empty_list() && val2.is_empty_list())
@@ -107,7 +107,7 @@ fn eval_eq(env: &Env, vec: ~[Expr]) -> EvalResult {
 }
 
 
-fn eval_car(env: &Env, vec: ~[Expr]) -> EvalResult {
+fn eval_car(env: Env, vec: ~[Expr]) -> EvalResult {
 
     if vec.len() != 2 {
         Err(~"`car` expects exactly one argument.")
@@ -124,7 +124,7 @@ fn eval_car(env: &Env, vec: ~[Expr]) -> EvalResult {
     }
 }
 
-fn eval_cdr(env: &Env, vec: ~[Expr]) -> EvalResult {
+fn eval_cdr(env: Env, vec: ~[Expr]) -> EvalResult {
 
     if vec.len() != 2 {
         Err(~"`cdr` expects exactly one argument.")
@@ -142,12 +142,12 @@ fn eval_cdr(env: &Env, vec: ~[Expr]) -> EvalResult {
     }
 }
 
-fn eval_cons(env: &Env, vec: ~[Expr]) -> EvalResult {
+fn eval_cons(env: Env, vec: ~[Expr]) -> EvalResult {
 
     if vec.len() != 3 {
         Err(~"`cons` expects exactly two arguments.")
     } else {
-        result_fmap2(eval(env, vec[1].clone()), 
+        result_fmap2(eval(env.clone(), vec[1].clone()), 
                      eval(env, vec[2]), 
              |val1: Expr, val2: Expr| -> EvalResult {
                 if val2.is_list() {
@@ -161,7 +161,7 @@ fn eval_cons(env: &Env, vec: ~[Expr]) -> EvalResult {
     }
 }
 
-fn eval_cond(env: &Env, vec: ~[Expr]) -> EvalResult {
+fn eval_cond(env: Env, vec: ~[Expr]) -> EvalResult {
     let mut i = 1;
     while i < vec.len() {
         if !vec[i].is_list() {
@@ -174,7 +174,7 @@ fn eval_cond(env: &Env, vec: ~[Expr]) -> EvalResult {
         if list.len() != 2 {
             return Err(~"Invalid argument to `cond`");
         } else {
-            let res = eval(env, list[0].clone());
+            let res = eval(env.clone(), list[0].clone());
             if res.is_err() {
                 return res;
             } else {
@@ -247,7 +247,7 @@ fn is_symbol(op: &str, expr: &Expr) -> bool {
     }
 }
 
-fn prepare_lambda(env: &Env, vec: ~[Expr])
+fn prepare_lambda(env: Env, vec: ~[Expr])
     -> Result<(~[Expr], HashMap<~str, Expr>, MoveItems<Expr>), ~str> {
 
     let mut vec_iter = vec.move_iter();
@@ -311,7 +311,7 @@ fn prepare_lambda(env: &Env, vec: ~[Expr])
 /// takes a vector of expressions and a vector of Atoms, evals each expression
 /// and inserts it into a provided hashMap (with the Atom as the key)
 fn populate_bindings(mut args: MoveItems<Expr>, params: ~[Expr],
-     env: &Env, mut bindings: HashMap<~str, Expr>) 
+     env: Env, mut bindings: HashMap<~str, Expr>) 
     -> Result<HashMap<~str, Expr>, ~str> {
 
     let mut param_iter = params.move_iter();
@@ -319,7 +319,7 @@ fn populate_bindings(mut args: MoveItems<Expr>, params: ~[Expr],
     debug!("\n :: iterating through args now and passing them into bindings\n");
     for arg in args {
         debug!("  -- {}", arg);
-        let res = eval(env, arg);
+        let res = eval(env.clone(), arg);
 
         if res.is_err() {
             return Err( res.unwrap_err() );
