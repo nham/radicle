@@ -78,16 +78,12 @@ fn eval_atom(env: Env, vec: ~[Expr]) -> EvalResult {
     if vec.len() != 2 {
         Err(~"`atom` expects exactly one argument.")
     } else {
-        result_bind(eval(env, vec[1]), 
-                    |res: EnvExpr| -> EvalResult {
-                        let env = res.clone().n0();
-                        let val = res.n1();
-                        if val.is_atom() || val.is_empty_list() {
-                            Ok( (env, Atom(~"t")) )
-                        } else {
-                            Ok( (env, List(~[])) )
-                        }
-                    })
+        let val = if_ok!( eval(env.clone(), vec[1]) ).n1();
+        if val.is_atom() || val.is_empty_list() {
+            Ok( (env, Atom(~"t")) )
+        } else {
+            Ok( (env, List(~[])) )
+        }
     }
 }
 
@@ -97,19 +93,14 @@ fn eval_eq(env: Env, vec: ~[Expr]) -> EvalResult {
     if vec.len() != 3 {
         Err(~"`eq` expects exactly two arguments.")
     } else {
-        result_fmap2(eval(env.clone(), vec[1].clone()), 
-                     eval(env, vec[2]), 
-             |res1: EnvExpr, res2: EnvExpr| -> EvalResult {
-                let env = res1.clone().n0();
-                 let val1 = res1.n1();
-                 let val2 = res2.n1();
-                if (val1.is_empty_list() && val2.is_empty_list())
-                   || (val1.is_atom() && val2.is_atom() && val1.eq(&val2)) {
-                    Ok( (env, Atom(~"t")) )
-                } else {
-                    Ok( (env, List(~[])) )
-                }
-            })
+        let val1 = if_ok!( eval(env.clone(), vec[1].clone()) ).n1();
+        let val2 = if_ok!( eval(env.clone(), vec[2]) ).n1();
+        if (val1.is_empty_list() && val2.is_empty_list())
+           || (val1.is_atom() && val2.is_atom() && val1.eq(&val2)) {
+            Ok( (env, Atom(~"t")) )
+        } else {
+            Ok( (env, List(~[])) )
+        }
     }
 }
 
@@ -119,17 +110,13 @@ fn eval_car(env: Env, vec: ~[Expr]) -> EvalResult {
     if vec.len() != 2 {
         Err(~"`car` expects exactly one argument.")
     } else {
-        result_bind(eval(env, vec[1]), 
-                    |res: EnvExpr| -> EvalResult {
-                        let env = res.clone().n0();
-                        let val = res.n1();
-                        if val.is_list() && !val.is_empty_list() {
-                            let list = val.unwrap_branch();
-                            Ok( (env, list[0]) )
-                        } else {
-                            Err(~"`car`'s argument must be a non-empty list")
-                        }
-                    })
+        let val = if_ok!( eval(env.clone(), vec[1]) ).n1();
+        if val.is_list() && !val.is_empty_list() {
+            let list = val.unwrap_branch();
+            Ok( (env, list[0]) )
+        } else {
+            Err(~"`car`'s argument must be a non-empty list")
+        }
     }
 }
 
@@ -138,17 +125,14 @@ fn eval_cdr(env: Env, vec: ~[Expr]) -> EvalResult {
     if vec.len() != 2 {
         Err(~"`cdr` expects exactly one argument.")
     } else {
-        result_bind(eval(env.clone(), vec[1]), 
-                    |res: EnvExpr| -> EvalResult {
-                        let val = res.n1();
-                        if val.is_list() && !val.is_empty_list() {
-                            let mut list = val.unwrap_branch();
-                            list.shift();
-                            Ok( (env.clone(), List(list)) )
-                        } else {
-                            Err(~"`cdr`'s argument must be a non-empty list")
-                        }
-                })
+        let val = if_ok!( eval(env.clone(), vec[1]) ).n1();
+        if val.is_list() && !val.is_empty_list() {
+            let mut list = val.unwrap_branch();
+            list.shift();
+            Ok( (env.clone(), List(list)) )
+        } else {
+            Err(~"`cdr`'s argument must be a non-empty list")
+        }
     }
 }
 
@@ -157,20 +141,16 @@ fn eval_cons(env: Env, vec: ~[Expr]) -> EvalResult {
     if vec.len() != 3 {
         Err(~"`cons` expects exactly two arguments.")
     } else {
-        result_fmap2(eval(env.clone(), vec[1].clone()), 
-                     eval(env, vec[2]), 
-            |res1: EnvExpr, res2: EnvExpr| -> EvalResult {
-                let env = res1.clone().n0();
-                let val1 = res1.n1();
-                let val2 = res2.n1();
-                if val2.is_list() {
-                    let mut list = val2.unwrap_branch();
-                    list.unshift(val1);
-                    Ok( (env, List(list)) )
-                } else {
-                    Err(~"`cons`'s second argument must be a list")
-                }
-            })
+        let val1 = if_ok!( eval(env.clone(), vec[1].clone()) ).n1();
+        let val2 = if_ok!( eval(env.clone(), vec[2]) ).n1();
+
+        if val2.is_list() {
+            let mut list = val2.unwrap_branch();
+            list.unshift(val1);
+            Ok( (env, List(list)) )
+        } else {
+            Err(~"`cons`'s second argument must be a list")
+        }
     }
 }
 
@@ -188,14 +168,10 @@ fn eval_cond(env: Env, vec: ~[Expr]) -> EvalResult {
             return Err(~"Invalid argument to `cond`");
         } else {
             let res = eval(env.clone(), list[0].clone());
-            if res.is_err() {
-                return res;
-            } else {
-                let val = if_ok!(res).n1();
+            let val = if_ok!(res).n1();
 
-                if val.eq( &Atom(~"t") ) {
-                    return eval(env, list[1]);
-                }
+            if val.eq( &Atom(~"t") ) {
+                return eval(env, list[1]);
             }
         }
 
@@ -346,27 +322,4 @@ fn populate_bindings(mut args: MoveItems<Expr>, params: ~[Expr],
     }
 
     Ok( bindings )
-}
-
-
-/// A bind for the Result<T, ~str> monad.
-pub fn result_bind<S, T>(v: Result<S, ~str>, f: |S| -> Result<T, ~str>) -> Result<T, ~str> {
-    match v {
-        Err(s) => Err(s),
-        Ok(x) => f(x),
-    }
-}
-
-/// Fmap2 for the Result<T, ~str> monad. Used in a couple places in eval()
-pub fn result_fmap2<S, T, U>(v1: Result<S, ~str>, 
-                         v2: Result<T, ~str>, 
-                         f: |S, T| -> Result<U, ~str>) -> Result<U, ~str> {
-    match v1 {
-        Err(s) => Err(s),
-        Ok(x) => 
-            match v2 {
-                Err(s) => Err(s),
-                Ok(y) => f(x, y),
-            }
-    }
 }
