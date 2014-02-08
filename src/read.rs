@@ -8,7 +8,7 @@ use super::{Expr, Exprs, MoveItems, Atom, List};
 pub type TokenStream = Peekable<~str, MoveItems<~str>>;
 
 
-/// Tries to reads a string of symbols into a list of expressions
+/// Tries to read a string of symbols into a list of expressions
 pub fn read(s: &str) -> Result<Exprs, ~str> {
     let mut stream = tokenize(s);
 

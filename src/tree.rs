@@ -71,10 +71,17 @@ impl<T: Show> Show for Tree<T> {
 impl<T: Show> Show for ~[Tree<T>] {
     fn fmt(&self, f: &mut Formatter) -> Result {
         let mut vec_iter = self.iter();
-        let mut s = format!("{}", *vec_iter.next().unwrap());
+        let mut s: ~str;
 
-        for e in vec_iter {
-            s = s + ~" " + format!("{}", *e);
+        let first = vec_iter.next();
+        if first.is_none() {
+            s = ~"";
+        } else {
+            s = format!("{}", *first.unwrap());
+
+            for e in vec_iter {
+                s = s + ~" " + format!("{}", *e);
+            }
         }
 
         write!(f.buf, "{}", s)
