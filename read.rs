@@ -8,7 +8,7 @@ use super::{Expr, Exprs, MoveItems, Atom, List};
 pub type TokenStream = Peekable<~str, MoveItems<~str>>;
 
 
-/// Reads a string of symbols into an expression (or possibly an error message)
+/// Tries to reads a string of symbols into a list of expressions
 pub fn read(s: &str) -> Result<Exprs, ~str> {
     let mut stream = tokenize(s);
 
@@ -28,7 +28,7 @@ pub fn read(s: &str) -> Result<Exprs, ~str> {
 
 
 /// Turns a string into a stream of tokens. Currently assumes that tokens
-/// do not have spaces or parens in them.
+/// do not have spaces or parens/brackets/braces in them.
 pub fn tokenize(s: &str) -> TokenStream {
     let mut s1 = s.replace("(", " ( ").replace(")", " ) ");
     s1 = s1.replace("[", " [ ").replace("]", " ] ");
@@ -48,7 +48,7 @@ pub fn tokenize(s: &str) -> TokenStream {
 }
 
 /// Attempts to read an entire expression from the token stream. Detects
-/// mismatched parentheses.
+/// mismatched parentheses. Also expands ' <expr> into (quote <expr)
 pub fn read_from(v: &mut TokenStream) -> Result<Expr, ~str> {
     fn is_beginning_list_sep(s: &~str) -> bool {
         "(".equiv(s) || "[".equiv(s) || "{".equiv(s)
