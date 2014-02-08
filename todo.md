@@ -1,2 +1,1 @@
  - defun syntatical sugar
- - evaluate a series of expressions instead of just one.
