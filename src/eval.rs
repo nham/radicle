@@ -57,12 +57,9 @@ pub fn eval(mut env: Env, expr: Expr) -> EvalResult {
                     return Err(~"mismatch between number of procedure args and number of args called with.");
                 }
 
-                let new_binds = populate_bindings(args, params, env.clone(), bindings);
-                if new_binds.is_err() {
-                    return Err( new_binds.unwrap_err() );
-                }
+                let new_binds = if_ok!( populate_bindings(args, params, env.clone(), bindings) );
 
-                for (k, v) in new_binds.unwrap().move_iter() {
+                for (k, v) in new_binds.move_iter() {
                     env.bindings.insert(k, v);
                 }
 
@@ -260,16 +257,10 @@ fn prepare_lambda(env: Env, vec: ~[Expr])
     // to see whether it evaluates to a function literal.
 
     if !is_func_literal(&op_expr) {
-        let res = eval(env, op_expr);
+        op_expr = if_ok!( eval(env, op_expr) ).n1();
 
-        if res.is_err() {
-            return Err( res.unwrap_err() );
-        } else {
-            op_expr = res.unwrap().n1();
-
-            if !is_func_literal(&op_expr) {
-                return Err(~"Unrecognized expression.");
-            }
+        if !is_func_literal(&op_expr) {
+            return Err(~"Unrecognized expression.");
         }
     }
 
@@ -308,17 +299,9 @@ fn populate_bindings(mut args: MoveItems<Expr>, params: ~[Expr],
     debug!("\n :: iterating through args now and passing them into bindings\n");
     for arg in args {
         debug!("  -- {}", arg);
-        let res = eval(env.clone(), arg);
-
-        if res.is_err() {
-            return Err( res.unwrap_err() );
-        } else {
-
-            let next_param: Expr  = param_iter.next().unwrap();
-            bindings.insert(next_param.unwrap_leaf(),
-                            res.unwrap().n1());
-        }
-
+        let next_param: Expr  = param_iter.next().unwrap();
+        bindings.insert(next_param.unwrap_leaf(), 
+                        if_ok!( eval(env.clone(), arg) ).n1());
     }
 
     Ok( bindings )
