@@ -69,8 +69,8 @@ fn main() {
   (quote CONSME) (quote santa) (car (quote (10 20 30))))", &globenv);
 
 
-    read_eval("(quote x) (quote y) (quote z)", &globenv);
  */
+    read_eval("(quote x) (quote y) (quote z)", &globenv);
 }
 
 
@@ -79,9 +79,12 @@ pub fn read_eval(s: &str, env: &Environment) {
     let parsed = read(s);
     if parsed.is_ok() {
         println!("Parsed: {}", parsed);
-        match eval(parsed.unwrap(), env) {
-            Ok(x) => { println!("\nEvaled: {}", x); },
-            Err(x) => { println!("\nEval error: {}", x); }
+
+        for expr in parsed.unwrap().move_iter() {
+            match eval(expr, env) {
+                Ok(x) => { println!("\nEvaled: {}", x); },
+                Err(x) => { println!("\nEval error: {}", x); }
+            }
         }
     } else {
         println!("\nParse error: {}", parsed.unwrap_err());
@@ -95,6 +98,7 @@ pub type TokenStream = Peekable<~str, MoveItems<~str>>;
 
 /// The representation of Lisp expressions
 pub type Expr = Tree<~str>;
+pub type Exprs = ~[Expr];
 
 
 pub struct Environment<'a> {
@@ -145,16 +149,21 @@ impl ::tree::Tree<~str> {
 
 
 /// Reads a string of symbols into an expression (or possibly an error message)
-pub fn read(s: &str) -> Result<Expr, ~str> {
+pub fn read(s: &str) -> Result<Exprs, ~str> {
     let mut stream = tokenize(s);
-    let x = read_from(&mut stream);
 
-    // eventually this will be stream.is_empty(), but theres a bug rust!
-    if stream.peek().is_some() {
-        return Err(~"Tokens left over, so parse was unsuccessful.");
+    let mut res: Exprs = ~[];
+
+    while !stream.is_empty() {
+        let x = read_from(&mut stream);
+        if x.is_err() {
+            return Err( x.unwrap_err() );
+        } else {
+            res.push( x.unwrap() );
+        }
     }
 
-    x
+    Ok( res )
 }
 
 
