@@ -71,12 +71,11 @@ pub fn repl() {
 pub fn read_eval(s: &str, env: &Env) {
     let parsed = read(s);
     if parsed.is_ok() {
-        println!("Parsed: {}", parsed);
 
         for res in eval_all(parsed.unwrap(), env).iter() {
             match *res {
-                Ok(ref x) => { println!("\nEvaled: {}", *x); },
-                Err(ref x) => { println!("\nEval error: {}", *x); }
+                Ok(ref x) => { println!("{}", *x); },
+                Err(ref x) => { println!("\nError: {}", *x); }
             }
         }
     } else {
