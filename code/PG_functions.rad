@@ -1,0 +1,26 @@
+(defun null (x)
+    (eq x '()))
+
+(defun and (x y)
+    (cond (x (cond (y 't) 
+                   ('t '())))
+          ('t '())))
+
+
+(defun not (x)
+    (cond (x '())
+          ('t 't)))
+
+(defun append (x y)
+    (cond ((null x) y)
+          ('t (cons (car x) (append (cdr x) y)))))
+
+
+(null 'foo)
+(null '())
+(and (atom 'foo) (eq 'foo 'foo))
+(and (atom 'foo) 'bar)
+
+(append '(a b c d) '(x y z))
+
+(append '() '(foo (bar) baz))
