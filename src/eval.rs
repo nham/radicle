@@ -37,35 +37,7 @@ pub fn eval(mut env: Env, expr: Expr) -> EvalResult {
             } else if is_symbol("cond", &vec[0]) {
                 eval_cond(env, vec)
             } else {
-
-                let num_args = vec.len() - 1;
-                let res = prepare_lambda(env.clone(), vec);
-
-                if res.is_err() {
-                    return Err( res.unwrap_err() );
-                }
-
-                let (mut lambda, mut bindings, args) = res.unwrap();
-
-
-                let mut lambda_iter = lambda.move_iter();
-                lambda_iter.next(); // discard "lambda" symbol, not needed
-                let params: ~[Expr] = lambda_iter.next().unwrap().unwrap_branch();
-                let lambda_body: Expr = lambda_iter.next().unwrap();
-
-                if params.len() != num_args {
-                    return Err(~"mismatch between number of procedure args and number of args called with.");
-                }
-
-                let new_binds = if_ok!( populate_bindings(args, params, env.clone(), bindings) );
-
-                for (k, v) in new_binds.move_iter() {
-                    env.bindings.insert(k, v);
-                }
-
-                debug!("\n :: arguments have been passed into environment, evaling lambda body\n");
-                eval(env, lambda_body)
-
+                eval_func_call(env, vec)
             }
         }
     }
@@ -179,13 +151,25 @@ fn eval_cond(env: Env, vec: ~[Expr]) -> EvalResult {
 }
 
 
-fn is_func_literal(expr: &Expr) -> bool {
-    is_lambda_literal(expr) || is_label_literal(expr)
+struct FuncLiteral {
+    params: ~[~str],
+    body: Expr,
+    sym: Option<~str>, // lambdas will have None, labels will have Some
 }
 
-fn is_lambda_literal(expr: &Expr) -> bool {
+
+fn parse_func_literal(expr: &Expr) -> Option<FuncLiteral> {
+    let lambda = parse_lambda_literal(expr);
+    if lambda.is_none() {
+        parse_label_literal(expr)
+    } else {
+        lambda
+    }
+}
+
+fn parse_lambda_literal(expr: &Expr) -> Option<FuncLiteral> {
     if !expr.is_list() {
-        return false;
+        return None;
     }
 
     let vec = expr.get_ref_branch();
@@ -193,35 +177,42 @@ fn is_lambda_literal(expr: &Expr) -> bool {
     if vec.len() != 3 
        || !vec[1].is_list() 
        || !is_symbol("lambda", &vec[0]) {
-        return false;
+        return None;
     }
 
     let params = vec[1].get_ref_branch();
+    let mut plist = ~[];
 
     for p in params.iter() {
         if !p.is_atom() {
-            return false;
+            return None;
+        } else {
+            plist.push ( p.clone().unwrap_leaf() );
         }
     }
 
-    true
+    Some( FuncLiteral{ params: plist, body: vec[2].clone(), sym: None } )
 }
 
-fn is_label_literal(expr: &Expr) -> bool {
+fn parse_label_literal(expr: &Expr) -> Option<FuncLiteral> {
     if !expr.is_list() {
-        return false;
+        return None;
     }
 
     let vec = expr.get_ref_branch();
 
     if vec.len() != 3 
        || !vec[1].is_atom() 
-       || !is_symbol("label", &vec[0]) 
-       || !is_lambda_literal(&vec[2]) {
-        return false;
+       || !is_symbol("label", &vec[0]) {
+        return None;
     }
 
-    true
+    let lit = parse_lambda_literal(&vec[2]);
+    if lit.is_none() { return None; }
+    let mut func = lit.unwrap();
+    func.sym = Some( vec[1].clone().unwrap_leaf() );
+
+    Some(func)
 }
 
 fn is_symbol(op: &str, expr: &Expr) -> bool {
@@ -233,8 +224,8 @@ fn is_symbol(op: &str, expr: &Expr) -> bool {
     }
 }
 
-fn prepare_lambda(env: Env, vec: ~[Expr])
-    -> Result<(~[Expr], HashMap<~str, Expr>, MoveItems<Expr>), ~str> {
+fn eval_func_call(mut env: Env, vec: ~[Expr]) -> EvalResult {
+    let num_args = vec.len() - 1;
 
     let mut vec_iter = vec.move_iter();
     let mut op_expr = vec_iter.next().unwrap();
@@ -256,53 +247,45 @@ fn prepare_lambda(env: Env, vec: ~[Expr])
     // it. However, if it is not such a literal, we need to eval it
     // to see whether it evaluates to a function literal.
 
-    if !is_func_literal(&op_expr) {
-        op_expr = if_ok!( eval(env, op_expr) ).n1();
+    let mut func_lit = parse_func_literal(&op_expr);
+    if func_lit.is_none() {
+        op_expr = if_ok!( eval(env.clone(), op_expr) ).n1();
 
-        if !is_func_literal(&op_expr) {
+        func_lit = parse_func_literal(&op_expr);
+        if func_lit.is_none() {
             return Err(~"Unrecognized expression.");
         }
     }
 
-    // If we've made it here, op_expr is either a label or lambda literal
-    let lambda: ~[Expr];
-    let mut bindings = HashMap::<~str, Expr>::new();
+    match func_lit.unwrap() {
+        FuncLiteral{params, body, sym} =>
+        {
+            let mut bindings = HashMap::<~str, Expr>::new();
+            if sym.is_some() {
+                bindings.insert(sym.unwrap(), body.clone());
+            }
 
-    if is_label_literal(&op_expr) {
-        let label_expr = op_expr.clone();
+            if params.len() != num_args {
+                return Err(~"mismatch between number of procedure args and number of args called with.");
+            }
 
-        let label = op_expr.unwrap_branch();
-        let mut label_iter = label.move_iter();
-        label_iter.next(); //discard "label" symbol
+            let mut param_iter = params.move_iter();
 
-        let func_sym = label_iter.next().unwrap().unwrap_leaf();
+            debug!("\n :: iterating through args now and passing them into bindings\n");
+            for arg in vec_iter {
+                debug!("  -- {}", arg);
+                let next_param: ~str  = param_iter.next().unwrap();
+                bindings.insert(next_param, 
+                                if_ok!( eval(env.clone(), arg) ).n1());
+            }
 
-        bindings.insert(func_sym, label_expr);
+            for (k, v) in bindings.move_iter() {
+                env.bindings.insert(k, v);
+            }
 
-        lambda = label_iter.next().unwrap().unwrap_branch();
-    } else {
-        lambda = op_expr.unwrap_branch();
+            debug!("\n :: arguments have been passed into environment, evaling lambda body\n");
+            eval(env, body)
+
+        },
     }
-
-    Ok( (lambda, bindings, vec_iter) )
-}
-
-
-/// takes a vector of expressions and a vector of Atoms, evals each expression
-/// and inserts it into a provided hashMap (with the Atom as the key)
-fn populate_bindings(mut args: MoveItems<Expr>, params: ~[Expr],
-     env: Env, mut bindings: HashMap<~str, Expr>) 
-    -> Result<HashMap<~str, Expr>, ~str> {
-
-    let mut param_iter = params.move_iter();
-
-    debug!("\n :: iterating through args now and passing them into bindings\n");
-    for arg in args {
-        debug!("  -- {}", arg);
-        let next_param: Expr  = param_iter.next().unwrap();
-        bindings.insert(next_param.unwrap_leaf(), 
-                        if_ok!( eval(env.clone(), arg) ).n1());
-    }
-
-    Ok( bindings )
 }
