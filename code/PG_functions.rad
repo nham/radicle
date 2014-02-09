@@ -11,10 +11,33 @@
     (cond (x '())
           ('t 't)))
 
-(defun append (x y)
+(defun append [x y]
     (cond ((null x) y)
           ('t (cons (car x) (append (cdr x) y)))))
 
+(defun pair [x y]
+    (cond {(and (null x) (null y)) '()}
+          {(and (not (atom x)) (not (atom y)))
+           (cons (cons (car x) (cons (car y) '()))
+                 (pair (cdr x) (cdr y)))}))
+
+
+(defun cadr (x)
+    (car (cdr x)))
+
+(defun caar (x)
+    (car (car x)))
+
+(defun caddr (x)
+    (car (cdr (cdr x))))
+
+(defun cadar (x)
+    (car (cdr (car x))))
+
+(defun assoc (x y)
+    (cond {(eq (caar y) x) (cadar y)}
+          {'t (assoc x (cdr y))}))
+    
 
 (null 'foo)
 (null '())
@@ -24,3 +47,9 @@
 (append '(a b c d) '(x y z))
 
 (append '() '(foo (bar) baz))
+
+(pair '(a b c) '(1 2 3))
+(pair '() '())
+
+(assoc 'x '((x a) (y b)))
+(assoc 'x '((y zuh) (x far) (x boo) (y baz)))
