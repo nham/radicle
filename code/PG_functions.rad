@@ -58,7 +58,7 @@
                                   (eval (frrest e) a))]
        [{eq (first e) 'first} (first (eval (frest e) a))]
        [{eq (first e) 'rest}  (rest (eval (frest e) a))]
-       [{eq (first e) 'cons}  (cons (eval (frest e) e)
+       [{eq (first e) 'cons}  (cons (eval (frest e) a)
                                     (eval (frrest e) a))]
        [{eq (first e) 'cond}  (evcond (rest e) a)]
        ['t (eval (cons (assoc (first e) a)

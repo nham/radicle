@@ -303,10 +303,9 @@ fn eval_func_call(env: Env, vec: ~[Expr]) -> EvalResult {
 
     let mut param_iter = params.move_iter();
 
-    debug!(" :: iterating through args now and passing them into bindings");
     for arg in vec_iter {
         let next_param: ~str  = param_iter.next().unwrap();
-        debug!("  -- eval of {} --> {}\n", arg, next_param);
+        debug!("  - eval of {} --> {}\n", arg, next_param);
         bindings.insert(next_param, 
                         if_ok!( eval(env.clone(), arg) ).n1());
     }
