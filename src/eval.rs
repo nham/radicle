@@ -4,7 +4,7 @@ type EnvExpr = (Env, Expr);
 type EvalResult = Result<EnvExpr, ~str>;
 
 /// The heart and soul of Radicle.
-pub fn eval(mut env: Env, expr: Expr) -> EvalResult {
+pub fn eval(env: Env, expr: Expr) -> EvalResult {
     debug!("\n :: Entered eval, expr = \n{}\n", expr);
     match expr {
         Nil => Ok( (env, Nil) ),
@@ -208,6 +208,7 @@ fn parse_label_literal(expr: &Expr) -> Option<FuncLiteral> {
     }
 
     let lit = parse_lambda_literal(&vec[2]);
+
     if lit.is_none() { return None; }
     let mut func = lit.unwrap();
     func.sym = Some( vec[1].clone().unwrap_leaf() );
@@ -224,7 +225,7 @@ fn is_symbol(op: &str, expr: &Expr) -> bool {
     }
 }
 
-fn eval_func_call(mut env: Env, vec: ~[Expr]) -> EvalResult {
+fn eval_func_call(env: Env, vec: ~[Expr]) -> EvalResult {
     let num_args = vec.len() - 1;
 
     let mut vec_iter = vec.move_iter();
@@ -260,7 +261,7 @@ fn eval_func_call(mut env: Env, vec: ~[Expr]) -> EvalResult {
     let FuncLiteral{params, body, sym} = func_lit.unwrap();
     let mut bindings = HashMap::<~str, Expr>::new();
     if sym.is_some() {
-        bindings.insert(sym.unwrap(), body.clone());
+        bindings.insert(sym.unwrap(), op_expr.clone());
     }
 
     if params.len() != num_args {
@@ -277,10 +278,12 @@ fn eval_func_call(mut env: Env, vec: ~[Expr]) -> EvalResult {
                         if_ok!( eval(env.clone(), arg) ).n1());
     }
 
+    let mut new_env = env.clone();
     for (k, v) in bindings.move_iter() {
-        env.bindings.insert(k, v);
+        new_env.bindings.insert(k, v);
     }
 
     debug!("\n :: arguments have been passed into environment, evaling lambda body\n");
-    eval(env, body)
+    let val = if_ok!( eval(new_env, body) ).n1();
+    Ok( (env, val) )
 }
