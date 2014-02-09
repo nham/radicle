@@ -36,6 +36,8 @@ pub fn eval(env: Env, expr: Expr) -> EvalResult {
                 eval_cons(env, vec)
             } else if is_symbol("cond", &vec[0]) {
                 eval_cond(env, vec)
+            } else if is_symbol("defun", &vec[0]) {
+                eval_defun(env, vec)
             } else {
                 eval_func_call(env, vec)
             }
@@ -148,6 +150,36 @@ fn eval_cond(env: Env, vec: ~[Expr]) -> EvalResult {
     }
 
     Ok( (env, Nil) )
+}
+
+
+fn eval_defun(env: Env, vec: ~[Expr]) -> EvalResult {
+    if vec.len() != 4 {
+        Err(~"`defun` expects exactly three arguments.")
+    } else {
+
+        if !vec[1].is_atom() {
+            return Err(~"First argument to `defun` must be a symbol");
+        }
+
+        {
+            let params = vec[2].get_ref_branch();
+            for p in params.iter() {
+                if !p.is_atom() {
+                    return Err(~"Second argument to `defun` must be a list of params");
+                } 
+            }
+        }
+
+        let label_expr = List(~[Atom(~"label"), 
+                                vec[1].clone(),
+                                List(~[Atom(~"lambda"), 
+                                       vec[2].clone(),
+                                       vec[3].clone()])]);
+        let mut new_env = env.clone();
+        new_env.bindings.insert(vec[1].unwrap_leaf(), label_expr);
+        Ok( (new_env, Nil) )
+    }
 }
 
 
