@@ -1,6 +1,0 @@
-((label map (lambda (f xs) (cond ((atom xs) xs)
-                                  ('t (cons (f (car xs)) 
-                                 (map f (cdr xs)))))))
-  '(lambda (x) (cons x (quote (y z))))
-  '(a b c)
-)
