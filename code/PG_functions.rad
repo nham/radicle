@@ -1,27 +1,3 @@
-(defun null (x)
-    (eq x '()))
-
-(defun and (x y)
-    (cond (x (cond (y 't) 
-                   ('t '())))
-          ('t '())))
-
-
-(defun not (x)
-    (cond (x '())
-          ('t 't)))
-
-(defun append [x y]
-    (cond ((null x) y)
-          ('t (cons (first x) (append (rest x) y)))))
-
-(defun pair [x y]
-    (cond {(and (null x) (null y)) '()}
-          {(and (not (atom x)) (not (atom y)))
-           (cons (cons (first x) (cons (first y) '()))
-                 (pair (rest x) (rest y)))}))
-
-
 (defun frest (x)
     (first (rest x)))
 
@@ -34,16 +10,82 @@
 (defun frfirst (x)
     (first (rest (first x))))
 
+(defun frrfirst (x)
+    (first (rest (rest (first x)))))
+
+(defun list2 (x y)
+    (cons x (cons y '())))
+
+
+
+(defun nil? (x)
+    (eq x '()))
+
+(defun and (x y)
+    (cond (x (cond (y 't) 
+                   ('t '())))
+          ('t '())))
+
+(defun not (x)
+    (cond (x '())
+          ('t 't)))
+
+(defun append [x y]
+    (cond ((nil? x) y)
+          ('t (cons (first x) (append (rest x) y)))))
+
+(defun pair (x y)
+    (cond [(and (nil? x) (nil? y)) '()]
+          [(and (not (atom x)) (not (atom y)))
+           (cons (list2 (first x) (first y))
+                 (pair (rest x) (rest y)))]
+    ))
+
+
 (defun assoc (x y)
     (cond {(eq (ffirst y) x) (frfirst y)}
           {'t (assoc x (rest y))}))
     
 
+(defun eval (e a)
+  (cond 
+    [{atom e} (assoc e a)]
+    [{atom (first e)}
+     (cond 
+       [{eq (first e) 'quote} (frest e)]
+       [{eq (first e) 'atom}  (atom (eval (frest e) a))]
+       [{eq (first e) 'eq}    (eq (eval (frest e) a)
+                                  (eval (frrest e) a))]
+       [{eq (first e) 'first} (first (eval (frest e) a))]
+       [{eq (first e) 'rest}  (rest (eval (frest e) a))]
+       [{eq (first e) 'cons}  (cons (eval (frest e) e)
+                                    (eval (frrest e) a))]
+       [{eq (first e) 'cond}  (evcond (rest e) a)]
+       ['t (eval (cons (assoc (first e) a)
+                       (rest e))
+                 a)]
+     )]
+    [{eq (ffirst e) 'label} 
+     (eval (cons (frrfirst e) (rest e))
+           (cons (list2 (frfirst e) (first e)) a))]
+    [{eq (ffirst e) 'lambda} 
+     (eval (frrfirst e)
+           (append (pair (frfirst e) (evlist (rest e) a)) a))]
+  ))
 
 
+(defun evcond (c a)
+  (cond [{eval (ffirst c) a} (eval (frfirst c) a)]
+        ['t (evcond (rest c) a)]
+  ))
 
-(null 'foo)
-(null '())
+(defun evlist (m a)
+  (cond [{nil? m} '()]
+        ['t (cons (eval (first m) a)
+                  (evlist (rest m) a))]
+  ))
+
+
 (and (atom 'foo) (eq 'foo 'foo))
 (and (atom 'foo) 'bar)
 
@@ -56,3 +98,16 @@
 
 (assoc 'x '((x a) (y b)))
 (assoc 'x '((y zuh) (x far) (x boo) (y baz)))
+
+(eval '(quote EVAL) '())
+(quote EVAL)
+
+(eval 'x '((y b) (x a)))
+
+(eval '(eq 'foo 'foo) '())
+(eq 'foo 'foo)
+(eval '(eq 'foo 'bar) '())
+(eq 'foo 'bar)
+
+(eval ''(x y) '())
+(eval '(cons x '(b c)) '[(x a) (y b)])
