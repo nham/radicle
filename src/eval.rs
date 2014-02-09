@@ -257,35 +257,30 @@ fn eval_func_call(mut env: Env, vec: ~[Expr]) -> EvalResult {
         }
     }
 
-    match func_lit.unwrap() {
-        FuncLiteral{params, body, sym} =>
-        {
-            let mut bindings = HashMap::<~str, Expr>::new();
-            if sym.is_some() {
-                bindings.insert(sym.unwrap(), body.clone());
-            }
-
-            if params.len() != num_args {
-                return Err(~"mismatch between number of procedure args and number of args called with.");
-            }
-
-            let mut param_iter = params.move_iter();
-
-            debug!("\n :: iterating through args now and passing them into bindings\n");
-            for arg in vec_iter {
-                debug!("  -- {}", arg);
-                let next_param: ~str  = param_iter.next().unwrap();
-                bindings.insert(next_param, 
-                                if_ok!( eval(env.clone(), arg) ).n1());
-            }
-
-            for (k, v) in bindings.move_iter() {
-                env.bindings.insert(k, v);
-            }
-
-            debug!("\n :: arguments have been passed into environment, evaling lambda body\n");
-            eval(env, body)
-
-        },
+    let FuncLiteral{params, body, sym} = func_lit.unwrap();
+    let mut bindings = HashMap::<~str, Expr>::new();
+    if sym.is_some() {
+        bindings.insert(sym.unwrap(), body.clone());
     }
+
+    if params.len() != num_args {
+        return Err(~"mismatch between number of procedure args and number of args called with.");
+    }
+
+    let mut param_iter = params.move_iter();
+
+    debug!("\n :: iterating through args now and passing them into bindings\n");
+    for arg in vec_iter {
+        debug!("  -- {}", arg);
+        let next_param: ~str  = param_iter.next().unwrap();
+        bindings.insert(next_param, 
+                        if_ok!( eval(env.clone(), arg) ).n1());
+    }
+
+    for (k, v) in bindings.move_iter() {
+        env.bindings.insert(k, v);
+    }
+
+    debug!("\n :: arguments have been passed into environment, evaling lambda body\n");
+    eval(env, body)
 }
