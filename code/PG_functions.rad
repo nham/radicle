@@ -13,31 +13,34 @@
 
 (defun append [x y]
     (cond ((null x) y)
-          ('t (cons (car x) (append (cdr x) y)))))
+          ('t (cons (first x) (append (rest x) y)))))
 
 (defun pair [x y]
     (cond {(and (null x) (null y)) '()}
           {(and (not (atom x)) (not (atom y)))
-           (cons (cons (car x) (cons (car y) '()))
-                 (pair (cdr x) (cdr y)))}))
+           (cons (cons (first x) (cons (first y) '()))
+                 (pair (rest x) (rest y)))}))
 
 
-(defun cadr (x)
-    (car (cdr x)))
+(defun frest (x)
+    (first (rest x)))
 
-(defun caar (x)
-    (car (car x)))
+(defun ffirst (x)
+    (first (first x)))
 
-(defun caddr (x)
-    (car (cdr (cdr x))))
+(defun frrest (x)
+    (first (rest (rest x))))
 
-(defun cadar (x)
-    (car (cdr (car x))))
+(defun frfirst (x)
+    (first (rest (first x))))
 
 (defun assoc (x y)
-    (cond {(eq (caar y) x) (cadar y)}
-          {'t (assoc x (cdr y))}))
+    (cond {(eq (ffirst y) x) (frfirst y)}
+          {'t (assoc x (rest y))}))
     
+
+
+
 
 (null 'foo)
 (null '())

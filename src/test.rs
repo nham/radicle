@@ -107,53 +107,53 @@ fn test_eval_eq() {
 }
 
 #[test]
-fn test_eval_car() {
+fn test_eval_first() {
     let mut env = Env::new();
 
     let foo = Atom(~"foo");
     let bar = Atom(~"bar");
     let nil = List(~[]);
     let quote = Atom(~"quote");
-    let car = Atom(~"car");
+    let first = Atom(~"first");
 
     let qfoo = List(~[quote.clone(), foo.clone()]);
     let qnil = List(~[quote.clone(), nil.clone()]);
 
-    let qfoo_eval = eval(env.clone(), List(~[car.clone(), qfoo]));
+    let qfoo_eval = eval(env.clone(), List(~[first.clone(), qfoo]));
     assert!( qfoo_eval.is_err() );
 
-    let qnil_eval = eval(env.clone(), List(~[car.clone(), qnil]));
+    let qnil_eval = eval(env.clone(), List(~[first.clone(), qnil]));
     assert!( qnil_eval.is_err() );
 
     let list = List(~[foo.clone(), bar.clone()]);
     let qlist = List(~[quote.clone(), list.clone()]);
-    let qlist_eval = eval(env, List(~[car.clone(), qlist]));
+    let qlist_eval = eval(env, List(~[first.clone(), qlist]));
     assert!( qlist_eval.is_ok() && qlist_eval.unwrap().n1().eq(&foo) );
 
 }
 
 #[test]
-fn test_eval_cdr() {
+fn test_eval_rest() {
     let mut env = Env::new();
 
     let foo = Atom(~"foo");
     let bar = Atom(~"bar");
     let nil = List(~[]);
     let quote = Atom(~"quote");
-    let cdr = Atom(~"cdr");
+    let rest = Atom(~"rest");
 
     let qfoo = List(~[quote.clone(), foo.clone()]);
     let qnil = List(~[quote.clone(), nil.clone()]);
 
-    let qfoo_eval = eval(env.clone(), List(~[cdr.clone(), qfoo]));
+    let qfoo_eval = eval(env.clone(), List(~[rest.clone(), qfoo]));
     assert!( qfoo_eval.is_err() );
 
-    let qnil_eval = eval(env.clone(), List(~[cdr.clone(), qnil]));
+    let qnil_eval = eval(env.clone(), List(~[rest.clone(), qnil]));
     assert!( qnil_eval.is_err() );
 
     let list = List(~[foo.clone(), bar.clone()]);
     let qlist = List(~[quote.clone(), list.clone()]);
-    let qlist_eval = eval(env, List(~[cdr.clone(), qlist]));
+    let qlist_eval = eval(env, List(~[rest.clone(), qlist]));
 
     let list_foo = List(~[bar.clone()]);
     assert!( qlist_eval.is_ok() && qlist_eval.unwrap().n1().eq(&list_foo) );

@@ -28,10 +28,10 @@ pub fn eval(env: Env, expr: Expr) -> EvalResult {
                 eval_atom(env, vec)
             } else if is_symbol("eq", &vec[0]) {
                 eval_eq(env, vec)
-            } else if is_symbol("car", &vec[0]) {
-                eval_car(env, vec)
-            } else if is_symbol("cdr", &vec[0]) {
-                eval_cdr(env, vec)
+            } else if is_symbol("first", &vec[0]) {
+                eval_first(env, vec)
+            } else if is_symbol("rest", &vec[0]) {
+                eval_rest(env, vec)
             } else if is_symbol("cons", &vec[0]) {
                 eval_cons(env, vec)
             } else if is_symbol("cond", &vec[0]) {
@@ -76,25 +76,25 @@ fn eval_eq(env: Env, vec: ~[Expr]) -> EvalResult {
 }
 
 
-fn eval_car(env: Env, vec: ~[Expr]) -> EvalResult {
+fn eval_first(env: Env, vec: ~[Expr]) -> EvalResult {
 
     if vec.len() != 2 {
-        Err(~"`car` expects exactly one argument.")
+        Err(~"`first` expects exactly one argument.")
     } else {
         let val = if_ok!( eval(env.clone(), vec[1]) ).n1();
         if val.is_list() && !val.is_empty_list() {
             let list = val.unwrap_branch();
             Ok( (env, list[0]) )
         } else {
-            Err(~"`car`'s argument must be a non-empty list")
+            Err(~"`first`'s argument must be a non-empty list")
         }
     }
 }
 
-fn eval_cdr(env: Env, vec: ~[Expr]) -> EvalResult {
+fn eval_rest(env: Env, vec: ~[Expr]) -> EvalResult {
 
     if vec.len() != 2 {
-        Err(~"`cdr` expects exactly one argument.")
+        Err(~"`rest` expects exactly one argument.")
     } else {
         let val = if_ok!( eval(env.clone(), vec[1]) ).n1();
         if val.is_list() && !val.is_empty_list() {
@@ -102,7 +102,7 @@ fn eval_cdr(env: Env, vec: ~[Expr]) -> EvalResult {
             list.shift();
             Ok( (env.clone(), List(list)) )
         } else {
-            Err(~"`cdr`'s argument must be a non-empty list")
+            Err(~"`rest`'s argument must be a non-empty list")
         }
     }
 }
