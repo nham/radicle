@@ -1,3 +1,4 @@
+ - make defun work in the repl (read_eval should return the new environment?)
  - add tests for read()
- - add tests for evaling lambda
- - add support for comments
+ - add tests for evaling lambdas, labels, defun
+ - add support for comments?
