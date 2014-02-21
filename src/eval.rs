@@ -16,8 +16,11 @@ pub fn eval(env: Env, expr: Expr) -> EvalResult {
                 Ok( (env, res.unwrap()) )
             }
         },
-        List([]) => Err(~"No procedure to call. TODO: a better error message?"),
         List(vec) => {
+            if vec.len() == 0 {
+                return Err(~"No procedure to call. TODO: a better error message?");
+            }
+
             if is_symbol("quote", &vec[0]) {
                 if vec.len() != 2 {
                     Err(~"`quote` expects exactly one argument.")
@@ -49,7 +52,7 @@ fn eval_atom(env: Env, vec: ~[Expr]) -> EvalResult {
     if vec.len() != 2 {
         Err(~"`atom` expects exactly one argument.")
     } else {
-        let val = if_ok!( eval(env.clone(), vec[1]) ).n1();
+        let val = if_ok!( eval(env.clone(), vec[1]) ).val1();
         if val.is_atom() || val.is_empty_list() {
             Ok( (env, Atom(~"t")) )
         } else {
@@ -64,8 +67,8 @@ fn eval_eq(env: Env, vec: ~[Expr]) -> EvalResult {
     if vec.len() != 3 {
         Err(~"`eq` expects exactly two arguments.")
     } else {
-        let val1 = if_ok!( eval(env.clone(), vec[1].clone()) ).n1();
-        let val2 = if_ok!( eval(env.clone(), vec[2]) ).n1();
+        let val1 = if_ok!( eval(env.clone(), vec[1].clone()) ).val1();
+        let val2 = if_ok!( eval(env.clone(), vec[2]) ).val1();
         if (val1.is_empty_list() && val2.is_empty_list())
            || (val1.is_atom() && val2.is_atom() && val1.eq(&val2)) {
             Ok( (env, Atom(~"t")) )
@@ -81,7 +84,7 @@ fn eval_first(env: Env, vec: ~[Expr]) -> EvalResult {
     if vec.len() != 2 {
         Err(~"`first` expects exactly one argument.")
     } else {
-        let val = if_ok!( eval(env.clone(), vec[1]) ).n1();
+        let val = if_ok!( eval(env.clone(), vec[1]) ).val1();
         if val.is_list() && !val.is_empty_list() {
             let list = val.unwrap_branch();
             Ok( (env, list[0]) )
@@ -97,7 +100,7 @@ fn eval_rest(env: Env, vec: ~[Expr]) -> EvalResult {
     if vec.len() != 2 {
         Err(~"`rest` expects exactly one argument.")
     } else {
-        let val = if_ok!( eval(env.clone(), vec[1]) ).n1();
+        let val = if_ok!( eval(env.clone(), vec[1]) ).val1();
         if val.is_list() && !val.is_empty_list() {
             let mut list = val.unwrap_branch();
             list.shift();
@@ -113,8 +116,8 @@ fn eval_cons(env: Env, vec: ~[Expr]) -> EvalResult {
     if vec.len() != 3 {
         Err(~"`cons` expects exactly two arguments.")
     } else {
-        let val1 = if_ok!( eval(env.clone(), vec[1].clone()) ).n1();
-        let val2 = if_ok!( eval(env.clone(), vec[2]) ).n1();
+        let val1 = if_ok!( eval(env.clone(), vec[1].clone()) ).val1();
+        let val2 = if_ok!( eval(env.clone(), vec[2]) ).val1();
 
         if val2.is_list() {
             let mut list = val2.unwrap_branch();
@@ -140,7 +143,7 @@ fn eval_cond(env: Env, vec: ~[Expr]) -> EvalResult {
             return Err(~"Invalid argument to `cond`");
         } else {
             let res = eval(env.clone(), list[0].clone());
-            let val = if_ok!(res).n1();
+            let val = if_ok!(res).val1();
 
             if val.eq( &Atom(~"t") ) {
                 return eval(env, list[1]);
@@ -283,7 +286,7 @@ fn eval_func_call(env: Env, vec: ~[Expr]) -> EvalResult {
 
     let mut func_lit = parse_func_literal(&op_expr);
     if func_lit.is_none() {
-        op_expr = if_ok!( eval(env.clone(), op_expr) ).n1();
+        op_expr = if_ok!( eval(env.clone(), op_expr) ).val1();
 
         func_lit = parse_func_literal(&op_expr);
         if func_lit.is_none() {
@@ -307,7 +310,7 @@ fn eval_func_call(env: Env, vec: ~[Expr]) -> EvalResult {
         let next_param: ~str  = param_iter.next().unwrap();
         debug!("  - eval of {} --> {}\n", arg, next_param);
         bindings.insert(next_param, 
-                        if_ok!( eval(env.clone(), arg) ).n1());
+                        if_ok!( eval(env.clone(), arg) ).val1());
     }
 
     let mut new_env = env.clone();
@@ -316,6 +319,6 @@ fn eval_func_call(env: Env, vec: ~[Expr]) -> EvalResult {
     }
 
     debug!(" :: arguments have been passed into environment, evaling lambda body\n");
-    let val = if_ok!( eval(new_env, body) ).n1();
+    let val = if_ok!( eval(new_env, body) ).val1();
     Ok( (env, val) )
 }
