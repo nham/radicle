@@ -5,7 +5,7 @@ type EvalResult = Result<EnvExpr, ~str>;
 
 /// The heart and soul of Radicle.
 pub fn eval(env: Env, expr: Expr) -> EvalResult {
-    debug!(" :: Entered eval, expr = {}\n", expr);
+    debug!(" :: Entered eval, expr = {:?}\n", expr);
     match expr {
         Nil => Ok( (env, Nil) ),
         Atom(ref s) => {
@@ -89,7 +89,7 @@ fn eval_first(env: Env, vec: ~[Expr]) -> EvalResult {
             let list = val.unwrap_branch();
             Ok( (env, list[0]) )
         } else {
-            debug!("argument is {}\n", val);
+            debug!("argument is {:?}\n", val);
             Err(~"`first`'s argument must be a non-empty list")
         }
     }
@@ -308,7 +308,7 @@ fn eval_func_call(env: Env, vec: ~[Expr]) -> EvalResult {
 
     for arg in vec_iter {
         let next_param: ~str  = param_iter.next().unwrap();
-        debug!("  - eval of {} --> {}\n", arg, next_param);
+        debug!("  - eval of {:?} --> {}\n", arg, next_param);
         bindings.insert(next_param, 
                         if_ok!( eval(env.clone(), arg) ).val1());
     }

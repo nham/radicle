@@ -1,4 +1,4 @@
-use std::fmt::{Show, Formatter, Result};
+use std::fmt::Show;
 
 #[deriving(Eq, Clone)]
 pub enum Tree<T> {
@@ -54,36 +54,34 @@ impl<T> Tree<T> {
         }
     }
 
+
 }
 
-impl<T: Show> Show for Tree<T> {
-    fn fmt(&self, f: &mut Formatter) -> Result {
-        match *self {
-            Branch(ref vec) => {
-                write!(f.buf, "({})", *vec)
-            },
-            Leaf(ref val) => write!(f.buf, "{}", *val),
-            Nil => write!(f.buf, ""),
-        }
+impl<T: Show> Tree<T> {
+    pub fn print(&self) {
+        self.print_tree();
+        println!("");
+
     }
-}
 
-impl<T: Show> Show for ~[Tree<T>] {
-    fn fmt(&self, f: &mut Formatter) -> Result {
-        let mut vec_iter = self.iter();
-        let mut s: ~str;
+    fn print_tree(&self) {
+        match *self {
+            Nil => {},
+            Leaf(ref val) => { print!("{}", *val); },
+            Branch(ref vec) => {
+                print!("(");
+                if vec.len() > 0 {
+                    let mut vec_iter = vec.iter();
+                    let first = vec_iter.next();
+                    first.unwrap().print_tree();
 
-        let first = vec_iter.next();
-        if first.is_none() {
-            s = ~"";
-        } else {
-            s = format!("{}", *first.unwrap());
-
-            for e in vec_iter {
-                s = s + ~" " + format!("{}", *e);
-            }
+                    for e in vec_iter {
+                        print!(" ");
+                        e.print_tree();
+                    }
+                }
+                print!(")");
+            },
         }
-
-        write!(f.buf, "{}", s)
     }
 }
