@@ -2,7 +2,9 @@
 
 //! A lisp interpreter.
 
-pub use std::hashmap::HashMap;
+extern crate collections;
+
+pub use collections::HashMap;
 pub use std::vec::MoveItems;
 use std::str;
 use std::os;
