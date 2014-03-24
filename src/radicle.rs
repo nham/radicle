@@ -1,11 +1,15 @@
+//! A lisp interpreter.
+
 #[crate_id = "radicle"];
 
-//! A lisp interpreter.
+#[feature(phase)];
+#[phase(syntax, link)] extern crate log;
+
 
 extern crate collections;
 
 pub use collections::HashMap;
-pub use std::vec::MoveItems;
+pub use std::slice::MoveItems;
 use std::str;
 use std::os;
 
@@ -61,7 +65,7 @@ pub fn repl() {
     print!("repl> ");
     stdio::flush();
     for line in stdin.lines() {
-        read_eval(line, env.clone());
+        read_eval(line.unwrap(), env.clone());
         print!("repl> ");
         stdio::flush();
     }
