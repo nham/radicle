@@ -65,7 +65,12 @@ pub fn repl() {
     print!("repl> ");
     stdio::flush();
     for line in stdin.lines() {
-        read_eval(line.unwrap(), env.clone());
+
+        match read_eval(line.unwrap(), env.clone()) {
+            Some(new_env) => { env = new_env; },
+            None => ()
+        }
+
         print!("repl> ");
         stdio::flush();
     }
@@ -74,7 +79,7 @@ pub fn repl() {
 
 
 /// A convenience function that calls read & eval and displays their results
-pub fn read_eval(s: &str, mut env: Env) {
+pub fn read_eval(s: &str, env: Env) -> Option<Env> {
     let parsed = read(s);
     if parsed.is_ok() {
         let mut expr_it = parsed.unwrap().move_iter();
@@ -86,10 +91,11 @@ pub fn read_eval(s: &str, mut env: Env) {
                     Err(ref x) => { println!("\nError: {}", *x); env }
                 }
         };
-         expr_it.fold(env, eval_help);
+         Some( expr_it.fold(env, eval_help) )
 
     } else {
         println!("\nParse error: {}", parsed.unwrap_err());
+        None
     }
 }
 
