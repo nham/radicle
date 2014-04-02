@@ -1,8 +1,8 @@
 //! A lisp interpreter.
 
-#[crate_id = "radicle"];
+#![crate_id = "radicle"]
 
-#[feature(phase)];
+#![feature(phase)]
 #[phase(syntax, link)] extern crate log;
 
 

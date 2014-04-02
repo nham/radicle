@@ -1,7 +1,7 @@
-use super::{Expr, Env, HashMap, MoveItems, Nil, Atom, List};
+use super::{Expr, Env, HashMap, Nil, Atom, List};
 
 type EnvExpr = (Env, Expr);
-type EvalResult = Result<EnvExpr, ~str>;
+pub type EvalResult = Result<EnvExpr, ~str>;
 
 /// The heart and soul of Radicle.
 pub fn eval(env: Env, expr: Expr) -> EvalResult {
