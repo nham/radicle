@@ -1,4 +1,4 @@
-use super::{Expr, Env, HashMap, Nil, Atom, List};
+use super::{Expr, Env, HashMap, Tree, Nil, Atom, List};
 
 type EnvExpr = (Env, Expr);
 pub type EvalResult = Result<EnvExpr, ~str>;
@@ -56,7 +56,7 @@ fn eval_atom(env: Env, vec: ~[Expr]) -> EvalResult {
         if val.is_atom() || val.is_empty_list() {
             Ok( (env, Atom(~"t")) )
         } else {
-            Ok( (env, List(~[])) )
+            Ok( (env, Tree::empty_branch()) )
         }
     }
 }
@@ -73,7 +73,7 @@ fn eval_eq(env: Env, vec: ~[Expr]) -> EvalResult {
            || (val1.is_atom() && val2.is_atom() && val1.eq(&val2)) {
             Ok( (env, Atom(~"t")) )
         } else {
-            Ok( (env, List(~[])) )
+            Ok( (env, Tree::empty_branch()) )
         }
     }
 }

@@ -8,6 +8,10 @@ pub enum Tree<T> {
 }
 
 impl<T> Tree<T> {
+    pub fn empty_branch() -> Tree<T> {
+        Branch(~[])
+    }
+
     pub fn is_nil(&self) -> bool {
         match *self {
             Nil     => true,
