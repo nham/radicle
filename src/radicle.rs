@@ -102,7 +102,7 @@ pub fn read_eval(s: &str, env: Env) -> Option<Env> {
 
 /// The representation of Lisp expressions
 pub type Expr = Tree<~str>;
-pub type Exprs = ~[Expr];
+pub type Exprs = Vec<Expr>;
 
 
 #[deriving(Clone)]

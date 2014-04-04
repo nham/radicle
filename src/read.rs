@@ -12,7 +12,7 @@ pub type TokenStream = Peekable<~str, MoveItems<~str>>;
 pub fn read(s: &str) -> Result<Exprs, ~str> {
     let mut stream = tokenize(s);
 
-    let mut res: Exprs = ~[];
+    let mut res: Exprs = vec!();
 
     while !stream.is_empty() {
         let x = read_from(&mut stream);
