@@ -1,3 +1,4 @@
+#![allow(unused_imports)]
 use eval::eval;
 use super::{HashMap, Env, Nil, Atom, List};
 
