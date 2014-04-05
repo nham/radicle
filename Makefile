@@ -1,3 +1,5 @@
+BUILD_DIR = build
+
 all:
-	mkdir -p build
-	rustc --out-dir=build -O src/radicle.rs
+	mkdir -p $(BUILD_DIR)
+	rustc --out-dir=$(BUILD_DIR) -O src/radicle.rs
