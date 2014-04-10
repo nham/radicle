@@ -47,8 +47,8 @@ pub fn interpret_file(fname: ~str) {
         if contents.is_err() {
             println!("{}", contents.unwrap_err());
         } else {
-            let data = str::from_utf8_owned(contents.unwrap());
-            read_eval(data.unwrap(), Env::new());
+            let data = str::from_utf8(contents.unwrap().as_slice()).unwrap().to_owned(); // ay yi yi
+            read_eval(data, Env::new());
         }
     } else {
         println!("radicle: can't open file {}", fname);
