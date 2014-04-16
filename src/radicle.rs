@@ -94,7 +94,7 @@ pub fn read_eval(s: &str, env: Env) -> Option<Env> {
          Some( expr_it.fold(env, eval_help) )
 
     } else {
-        println!("\nParse error: {}", parsed.unwrap_err());
+        println!("\nParse error: {}", parsed.err().unwrap());
         None
     }
 }
