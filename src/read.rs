@@ -17,9 +17,9 @@ pub fn read(s: &str) -> Result<Exprs, ~str> {
     while !stream.is_empty() {
         let x = read_from(&mut stream);
         if x.is_err() {
-            return Err( x.unwrap_err() );
+            return Err( x.err().unwrap() );
         } else {
-            res.push( x.unwrap() );
+            res.push( x.ok().unwrap() );
         }
     }
 
