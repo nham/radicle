@@ -1,3 +1,4 @@
  - add tests for read()
  - add tests for evaling lambdas, labels, defun
  - add support for comments?
+ - make repl support arrow keys
