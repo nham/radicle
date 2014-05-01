@@ -131,6 +131,6 @@ impl ::tree::Tree<~str> {
     }
 
     fn is_empty_list(&self) -> bool {
-        self.eq(&List(~[]))
+        self.eq(&List(vec!()))
     }
 }

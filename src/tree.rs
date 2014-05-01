@@ -4,12 +4,12 @@ use std::fmt::Show;
 pub enum Tree<T> {
     Nil,
     Leaf(T),
-    Branch(~[Tree<T>])
+    Branch(Vec<Tree<T>>)
 }
 
 impl<T> Tree<T> {
     pub fn empty_branch() -> Tree<T> {
-        Branch(~[])
+        Branch(vec!())
     }
 
     pub fn is_nil(&self) -> bool {
@@ -37,7 +37,7 @@ impl<T> Tree<T> {
         }
     }
 
-    pub fn get_ref_branch<'a>(&'a self) -> &'a ~[Tree<T>] {
+    pub fn get_ref_branch<'a>(&'a self) -> &'a Vec<Tree<T>> {
         match *self {
             Branch(ref val) => val,
             _         => fail!("called Tree<T>::get_ref_branch() on non-Branch"),
@@ -51,7 +51,7 @@ impl<T> Tree<T> {
         }
     }
 
-    pub fn unwrap_branch(self) -> ~[Tree<T>] {
+    pub fn unwrap_branch(self) -> Vec<Tree<T>> {
         match self {
             Branch(val) => val,
             _         => fail!("called Tree<T>::unwrap_branch() on non-Branch"),
