@@ -9,7 +9,7 @@
 extern crate collections;
 
 pub use collections::HashMap;
-pub use std::slice::MoveItems;
+pub use std::vec::MoveItems;
 use std::str;
 use std::os;
 
@@ -131,6 +131,6 @@ impl ::tree::Tree<~str> {
     }
 
     fn is_empty_list(&self) -> bool {
-        self.eq(&List(~[]))
+        self.eq(&List(vec!()))
     }
 }

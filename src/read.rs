@@ -37,7 +37,7 @@ pub fn tokenize(s: &str) -> TokenStream {
 
     let x: ~[&str] = s1.split(|c: char| is_whitespace(c)).collect();
 
-    let mut ret: ~[~str] = ~[];
+    let mut ret: Vec<~str> = vec!();
     for &e in x.iter() {
         if e != "" {
             ret.push(e.to_owned());
@@ -63,7 +63,7 @@ pub fn read_from(v: &mut TokenStream) -> Result<Expr, ~str> {
         None        => Err(~"Unexpected end of token stream"),
         Some(s) =>
             if is_beginning_list_sep(&s) {
-                let mut ch = ~[];
+                let mut ch = vec!();
 
                 loop {
                     {
@@ -87,7 +87,7 @@ pub fn read_from(v: &mut TokenStream) -> Result<Expr, ~str> {
             } else if "'".equiv(&s) {
                 match read_from(v) {
                     Err(e) => Err(e),
-                    Ok(expr) => Ok( List(~[Atom(~"quote"), expr]) ),
+                    Ok(expr) => Ok( List( vec!(Atom(~"quote"), expr)) ),
                 }
             } else {
                 Ok( Atom(s) )

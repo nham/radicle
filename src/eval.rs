@@ -21,25 +21,25 @@ pub fn eval(env: Env, expr: Expr) -> EvalResult {
                 return Err(~"No procedure to call. TODO: a better error message?");
             }
 
-            if is_symbol("quote", &vec[0]) {
+            if is_symbol("quote", vec.get(0)) {
                 if vec.len() != 2 {
                     Err(~"`quote` expects exactly one argument.")
                 } else {
-                    Ok( (env, vec[1]) )
+                    Ok( (env, vec.get(1).clone()) )
                 }
-            } else if is_symbol("atom", &vec[0]) {
+            } else if is_symbol("atom", vec.get(0)) {
                 eval_atom(env, vec)
-            } else if is_symbol("eq", &vec[0]) {
+            } else if is_symbol("eq", vec.get(0)) {
                 eval_eq(env, vec)
-            } else if is_symbol("first", &vec[0]) {
+            } else if is_symbol("first", vec.get(0)) {
                 eval_first(env, vec)
-            } else if is_symbol("rest", &vec[0]) {
+            } else if is_symbol("rest", vec.get(0)) {
                 eval_rest(env, vec)
-            } else if is_symbol("cons", &vec[0]) {
+            } else if is_symbol("cons", vec.get(0)) {
                 eval_cons(env, vec)
-            } else if is_symbol("cond", &vec[0]) {
+            } else if is_symbol("cond", vec.get(0)) {
                 eval_cond(env, vec)
-            } else if is_symbol("defun", &vec[0]) {
+            } else if is_symbol("defun", vec.get(0)) {
                 eval_defun(env, vec)
             } else {
                 eval_func_call(env, vec)
@@ -48,11 +48,11 @@ pub fn eval(env: Env, expr: Expr) -> EvalResult {
     }
 }
 
-fn eval_atom(env: Env, vec: ~[Expr]) -> EvalResult {
+fn eval_atom(env: Env, vec: Vec<Expr>) -> EvalResult {
     if vec.len() != 2 {
         Err(~"`atom` expects exactly one argument.")
     } else {
-        let val = try!( eval(env.clone(), vec[1]) ).val1();
+        let val = try!( eval(env.clone(), vec.get(1).clone() ) ).val1();
         if val.is_atom() || val.is_empty_list() {
             Ok( (env, Atom(~"t")) )
         } else {
@@ -62,13 +62,13 @@ fn eval_atom(env: Env, vec: ~[Expr]) -> EvalResult {
 }
 
 
-fn eval_eq(env: Env, vec: ~[Expr]) -> EvalResult {
+fn eval_eq(env: Env, vec: Vec<Expr>) -> EvalResult {
 
     if vec.len() != 3 {
         Err(~"`eq` expects exactly two arguments.")
     } else {
-        let val1 = try!( eval(env.clone(), vec[1].clone()) ).val1();
-        let val2 = try!( eval(env.clone(), vec[2]) ).val1();
+        let val1 = try!( eval(env.clone(), vec.get(1).clone()) ).val1();
+        let val2 = try!( eval(env.clone(), vec.get(2).clone() ) ).val1();
         if (val1.is_empty_list() && val2.is_empty_list())
            || (val1.is_atom() && val2.is_atom() && val1.eq(&val2)) {
             Ok( (env, Atom(~"t")) )
@@ -79,15 +79,15 @@ fn eval_eq(env: Env, vec: ~[Expr]) -> EvalResult {
 }
 
 
-fn eval_first(env: Env, vec: ~[Expr]) -> EvalResult {
+fn eval_first(env: Env, vec: Vec<Expr>) -> EvalResult {
 
     if vec.len() != 2 {
         Err(~"`first` expects exactly one argument.")
     } else {
-        let val = try!( eval(env.clone(), vec[1]) ).val1();
+        let val = try!( eval(env.clone(), vec.get(1).clone() ) ).val1();
         if val.is_list() && !val.is_empty_list() {
             let list = val.unwrap_branch();
-            Ok( (env, list[0]) )
+            Ok( (env, list.get(0).clone()) )
         } else {
             debug!("argument is {:?}\n", val);
             Err(~"`first`'s argument must be a non-empty list")
@@ -95,12 +95,12 @@ fn eval_first(env: Env, vec: ~[Expr]) -> EvalResult {
     }
 }
 
-fn eval_rest(env: Env, vec: ~[Expr]) -> EvalResult {
+fn eval_rest(env: Env, vec: Vec<Expr>) -> EvalResult {
 
     if vec.len() != 2 {
         Err(~"`rest` expects exactly one argument.")
     } else {
-        let val = try!( eval(env.clone(), vec[1]) ).val1();
+        let val = try!( eval(env.clone(), vec.get(1).clone() ) ).val1();
         if val.is_list() && !val.is_empty_list() {
             let mut list = val.unwrap_branch();
             list.shift();
@@ -111,13 +111,13 @@ fn eval_rest(env: Env, vec: ~[Expr]) -> EvalResult {
     }
 }
 
-fn eval_cons(env: Env, vec: ~[Expr]) -> EvalResult {
+fn eval_cons(env: Env, vec: Vec<Expr>) -> EvalResult {
 
     if vec.len() != 3 {
         Err(~"`cons` expects exactly two arguments.")
     } else {
-        let val1 = try!( eval(env.clone(), vec[1].clone()) ).val1();
-        let val2 = try!( eval(env.clone(), vec[2]) ).val1();
+        let val1 = try!( eval(env.clone(), vec.get(1).clone()) ).val1();
+        let val2 = try!( eval(env.clone(), vec.get(2).clone()) ).val1();
 
         if val2.is_list() {
             let mut list = val2.unwrap_branch();
@@ -129,24 +129,24 @@ fn eval_cons(env: Env, vec: ~[Expr]) -> EvalResult {
     }
 }
 
-fn eval_cond(env: Env, vec: ~[Expr]) -> EvalResult {
+fn eval_cond(env: Env, vec: Vec<Expr>) -> EvalResult {
     let mut i = 1;
     while i < vec.len() {
-        if !vec[i].is_list() {
+        if !vec.get(i).is_list() {
             return Err(~"Invalid argument to `cond`");
         }
 
-        let arg = vec[i].clone();
+        let arg = vec.get(i).clone();
         let list = arg.unwrap_branch();
 
         if list.len() != 2 {
             return Err(~"Invalid argument to `cond`");
         } else {
-            let res = eval(env.clone(), list[0].clone());
+            let res = eval(env.clone(), list.get(0).clone());
             let val = try!(res).val1();
 
             if val.eq( &Atom(~"t") ) {
-                return eval(env, list[1]);
+                return eval(env, list.get(1).clone() );
             }
         }
 
@@ -157,17 +157,17 @@ fn eval_cond(env: Env, vec: ~[Expr]) -> EvalResult {
 }
 
 
-fn eval_defun(env: Env, vec: ~[Expr]) -> EvalResult {
+fn eval_defun(env: Env, vec: Vec<Expr>) -> EvalResult {
     if vec.len() != 4 {
         Err(~"`defun` expects exactly three arguments.")
     } else {
 
-        if !vec[1].is_atom() {
+        if !vec.get(1).is_atom() {
             return Err(~"First argument to `defun` must be a symbol");
         }
 
         {
-            let params = vec[2].get_ref_branch();
+            let params = vec.get(2).get_ref_branch();
             for p in params.iter() {
                 if !p.is_atom() {
                     return Err(~"Second argument to `defun` must be a list of params");
@@ -175,20 +175,23 @@ fn eval_defun(env: Env, vec: ~[Expr]) -> EvalResult {
             }
         }
 
-        let label_expr = List(~[Atom(~"label"), 
-                                vec[1].clone(),
-                                List(~[Atom(~"lambda"), 
-                                       vec[2].clone(),
-                                       vec[3].clone()])]);
+        let func_name = vec.get(1).clone();
+        let params = vec.get(2).clone();
+        let body = vec.get(3).clone();
+
+        let label_expr = List( vec!(Atom(~"label"), 
+                                    func_name,
+                                    List( vec!(Atom(~"lambda"), params, body) ))
+                             );
         let mut new_env = env.clone();
-        new_env.bindings.insert(vec[1].unwrap_leaf(), label_expr);
+        new_env.bindings.insert(vec.get(1).clone().unwrap_leaf(), label_expr);
         Ok( (new_env, Nil) )
     }
 }
 
 
 struct FuncLiteral {
-    params: ~[~str],
+    params: Vec<~str>,
     body: Expr,
     sym: Option<~str>, // lambdas will have None, labels will have Some
 }
@@ -211,13 +214,13 @@ fn parse_lambda_literal(expr: &Expr) -> Option<FuncLiteral> {
     let vec = expr.get_ref_branch();
 
     if vec.len() != 3 
-       || !vec[1].is_list() 
-       || !is_symbol("lambda", &vec[0]) {
+       || !vec.get(1).is_list() 
+       || !is_symbol("lambda", vec.get(0)) {
         return None;
     }
 
-    let params = vec[1].get_ref_branch();
-    let mut plist = ~[];
+    let params = vec.get(1).get_ref_branch();
+    let mut plist = vec!();
 
     for p in params.iter() {
         if !p.is_atom() {
@@ -227,7 +230,7 @@ fn parse_lambda_literal(expr: &Expr) -> Option<FuncLiteral> {
         }
     }
 
-    Some( FuncLiteral{ params: plist, body: vec[2].clone(), sym: None } )
+    Some( FuncLiteral{ params: plist, body: vec.get(2).clone(), sym: None } )
 }
 
 fn parse_label_literal(expr: &Expr) -> Option<FuncLiteral> {
@@ -238,16 +241,16 @@ fn parse_label_literal(expr: &Expr) -> Option<FuncLiteral> {
     let vec = expr.get_ref_branch();
 
     if vec.len() != 3 
-       || !vec[1].is_atom() 
-       || !is_symbol("label", &vec[0]) {
+       || !vec.get(1).is_atom() 
+       || !is_symbol("label", vec.get(0)) {
         return None;
     }
 
-    let lit = parse_lambda_literal(&vec[2]);
+    let lit = parse_lambda_literal(vec.get(2));
 
     if lit.is_none() { return None; }
     let mut func = lit.unwrap();
-    func.sym = Some( vec[1].clone().unwrap_leaf() );
+    func.sym = Some( vec.get(1).clone().unwrap_leaf() );
 
     Some(func)
 }
@@ -261,7 +264,7 @@ fn is_symbol(op: &str, expr: &Expr) -> bool {
     }
 }
 
-fn eval_func_call(env: Env, vec: ~[Expr]) -> EvalResult {
+fn eval_func_call(env: Env, vec: Vec<Expr>) -> EvalResult {
     let num_args = vec.len() - 1;
 
     let mut vec_iter = vec.move_iter();
