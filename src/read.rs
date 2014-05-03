@@ -9,7 +9,7 @@ pub type TokenStream = Peekable<~str, MoveItems<~str>>;
 
 
 /// Tries to read a string of symbols into a list of expressions
-pub fn read(s: &str) -> Result<Exprs, ~str> {
+pub fn read(s: &str) -> Result<Exprs, &'static str> {
     let mut stream = tokenize(s);
 
     let mut res: Exprs = vec!();
@@ -49,7 +49,7 @@ pub fn tokenize(s: &str) -> TokenStream {
 
 /// Attempts to read an entire expression from the token stream. Detects
 /// mismatched parentheses. Also expands ' <expr> into (quote <expr)
-pub fn read_from(v: &mut TokenStream) -> Result<Expr, ~str> {
+pub fn read_from(v: &mut TokenStream) -> Result<Expr, &'static str> {
     fn is_beginning_list_sep(s: &~str) -> bool {
         "(".equiv(s) || "[".equiv(s) || "{".equiv(s)
     }
@@ -60,7 +60,7 @@ pub fn read_from(v: &mut TokenStream) -> Result<Expr, ~str> {
 
     let tok = v.next();
     match tok {
-        None        => Err(~"Unexpected end of token stream"),
+        None        => Err("Unexpected end of token stream"),
         Some(s) =>
             if is_beginning_list_sep(&s) {
                 let mut ch = vec!();
@@ -83,11 +83,11 @@ pub fn read_from(v: &mut TokenStream) -> Result<Expr, ~str> {
                 Ok( List(ch) )
 
             } else if is_ending_list_sep(&s) {
-                Err(format!("Unexpected '{}'", s))
+                Err("Unexpected list end token")
             } else if "'".equiv(&s) {
                 match read_from(v) {
                     Err(e) => Err(e),
-                    Ok(expr) => Ok( List( vec!(Atom(~"quote"), expr)) ),
+                    Ok(expr) => Ok( List( vec!(Atom("quote".to_owned()), expr)) ),
                 }
             } else {
                 Ok( Atom(s) )

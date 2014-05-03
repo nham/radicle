@@ -1,7 +1,7 @@
 use super::{Expr, Env, HashMap, Tree, Nil, Atom, List};
 
 type EnvExpr = (Env, Expr);
-pub type EvalResult = Result<EnvExpr, ~str>;
+pub type EvalResult = Result<EnvExpr, &'static str>;
 
 /// The heart and soul of Radicle.
 pub fn eval(env: Env, expr: Expr) -> EvalResult {
@@ -11,19 +11,19 @@ pub fn eval(env: Env, expr: Expr) -> EvalResult {
         Atom(ref s) => {
             let res = env.find_copy(s);
             if res.is_none() {
-                Err(format!("Symbol `{}` not found.", *s))
+                Err("Symbol not found.")
             } else {
                 Ok( (env, res.unwrap()) )
             }
         },
         List(vec) => {
             if vec.len() == 0 {
-                return Err(~"No procedure to call. TODO: a better error message?");
+                return Err("No procedure to call. TODO: a better error message?");
             }
 
             if is_symbol("quote", vec.get(0)) {
                 if vec.len() != 2 {
-                    Err(~"`quote` expects exactly one argument.")
+                    Err("`quote` expects exactly one argument.")
                 } else {
                     Ok( (env, vec.get(1).clone()) )
                 }
@@ -50,11 +50,11 @@ pub fn eval(env: Env, expr: Expr) -> EvalResult {
 
 fn eval_atom(env: Env, vec: Vec<Expr>) -> EvalResult {
     if vec.len() != 2 {
-        Err(~"`atom` expects exactly one argument.")
+        Err("`atom` expects exactly one argument.")
     } else {
         let val = try!( eval(env.clone(), vec.get(1).clone() ) ).val1();
         if val.is_atom() || val.is_empty_list() {
-            Ok( (env, Atom(~"t")) )
+            Ok( (env, Atom("t".to_owned())) )
         } else {
             Ok( (env, Tree::empty_branch()) )
         }
@@ -65,13 +65,13 @@ fn eval_atom(env: Env, vec: Vec<Expr>) -> EvalResult {
 fn eval_eq(env: Env, vec: Vec<Expr>) -> EvalResult {
 
     if vec.len() != 3 {
-        Err(~"`eq` expects exactly two arguments.")
+        Err("`eq` expects exactly two arguments.")
     } else {
         let val1 = try!( eval(env.clone(), vec.get(1).clone()) ).val1();
         let val2 = try!( eval(env.clone(), vec.get(2).clone() ) ).val1();
         if (val1.is_empty_list() && val2.is_empty_list())
            || (val1.is_atom() && val2.is_atom() && val1.eq(&val2)) {
-            Ok( (env, Atom(~"t")) )
+            Ok( (env, Atom("t".to_owned())) )
         } else {
             Ok( (env, Tree::empty_branch()) )
         }
@@ -82,7 +82,7 @@ fn eval_eq(env: Env, vec: Vec<Expr>) -> EvalResult {
 fn eval_first(env: Env, vec: Vec<Expr>) -> EvalResult {
 
     if vec.len() != 2 {
-        Err(~"`first` expects exactly one argument.")
+        Err("`first` expects exactly one argument.")
     } else {
         let val = try!( eval(env.clone(), vec.get(1).clone() ) ).val1();
         if val.is_list() && !val.is_empty_list() {
@@ -90,7 +90,7 @@ fn eval_first(env: Env, vec: Vec<Expr>) -> EvalResult {
             Ok( (env, list.get(0).clone()) )
         } else {
             debug!("argument is {:?}\n", val);
-            Err(~"`first`'s argument must be a non-empty list")
+            Err("`first`'s argument must be a non-empty list")
         }
     }
 }
@@ -98,7 +98,7 @@ fn eval_first(env: Env, vec: Vec<Expr>) -> EvalResult {
 fn eval_rest(env: Env, vec: Vec<Expr>) -> EvalResult {
 
     if vec.len() != 2 {
-        Err(~"`rest` expects exactly one argument.")
+        Err("`rest` expects exactly one argument.")
     } else {
         let val = try!( eval(env.clone(), vec.get(1).clone() ) ).val1();
         if val.is_list() && !val.is_empty_list() {
@@ -106,7 +106,7 @@ fn eval_rest(env: Env, vec: Vec<Expr>) -> EvalResult {
             list.shift();
             Ok( (env.clone(), List(list)) )
         } else {
-            Err(~"`rest`'s argument must be a non-empty list")
+            Err("`rest`'s argument must be a non-empty list")
         }
     }
 }
@@ -114,7 +114,7 @@ fn eval_rest(env: Env, vec: Vec<Expr>) -> EvalResult {
 fn eval_cons(env: Env, vec: Vec<Expr>) -> EvalResult {
 
     if vec.len() != 3 {
-        Err(~"`cons` expects exactly two arguments.")
+        Err("`cons` expects exactly two arguments.")
     } else {
         let val1 = try!( eval(env.clone(), vec.get(1).clone()) ).val1();
         let val2 = try!( eval(env.clone(), vec.get(2).clone()) ).val1();
@@ -124,7 +124,7 @@ fn eval_cons(env: Env, vec: Vec<Expr>) -> EvalResult {
             list.unshift(val1);
             Ok( (env, List(list)) )
         } else {
-            Err(~"`cons`'s second argument must be a list")
+            Err("`cons`'s second argument must be a list")
         }
     }
 }
@@ -133,19 +133,19 @@ fn eval_cond(env: Env, vec: Vec<Expr>) -> EvalResult {
     let mut i = 1;
     while i < vec.len() {
         if !vec.get(i).is_list() {
-            return Err(~"Invalid argument to `cond`");
+            return Err("Invalid argument to `cond`");
         }
 
         let arg = vec.get(i).clone();
         let list = arg.unwrap_branch();
 
         if list.len() != 2 {
-            return Err(~"Invalid argument to `cond`");
+            return Err("Invalid argument to `cond`");
         } else {
             let res = eval(env.clone(), list.get(0).clone());
             let val = try!(res).val1();
 
-            if val.eq( &Atom(~"t") ) {
+            if val.eq( &Atom("t".to_owned()) ) {
                 return eval(env, list.get(1).clone() );
             }
         }
@@ -159,18 +159,18 @@ fn eval_cond(env: Env, vec: Vec<Expr>) -> EvalResult {
 
 fn eval_defun(env: Env, vec: Vec<Expr>) -> EvalResult {
     if vec.len() != 4 {
-        Err(~"`defun` expects exactly three arguments.")
+        Err("`defun` expects exactly three arguments.")
     } else {
 
         if !vec.get(1).is_atom() {
-            return Err(~"First argument to `defun` must be a symbol");
+            return Err("First argument to `defun` must be a symbol");
         }
 
         {
             let params = vec.get(2).get_ref_branch();
             for p in params.iter() {
                 if !p.is_atom() {
-                    return Err(~"Second argument to `defun` must be a list of params");
+                    return Err("Second argument to `defun` must be a list of params");
                 } 
             }
         }
@@ -179,9 +179,9 @@ fn eval_defun(env: Env, vec: Vec<Expr>) -> EvalResult {
         let params = vec.get(2).clone();
         let body = vec.get(3).clone();
 
-        let label_expr = List( vec!(Atom(~"label"), 
+        let label_expr = List( vec!(Atom("label".to_owned()), 
                                     func_name,
-                                    List( vec!(Atom(~"lambda"), params, body) ))
+                                    List( vec!(Atom("lambda".to_owned()), params, body) ))
                              );
         let mut new_env = env.clone();
         new_env.bindings.insert(vec.get(1).clone().unwrap_leaf(), label_expr);
@@ -293,7 +293,7 @@ fn eval_func_call(env: Env, vec: Vec<Expr>) -> EvalResult {
 
         func_lit = parse_func_literal(&op_expr);
         if func_lit.is_none() {
-            return Err(~"Unrecognized expression.");
+            return Err("Unrecognized expression.");
         }
     }
 
@@ -304,7 +304,7 @@ fn eval_func_call(env: Env, vec: Vec<Expr>) -> EvalResult {
     }
 
     if params.len() != num_args {
-        return Err(~"mismatch between number of procedure args and number of args called with.");
+        return Err("mismatch between number of procedure args and number of args called with.");
     }
 
     let mut param_iter = params.move_iter();
