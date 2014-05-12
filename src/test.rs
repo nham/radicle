@@ -1,18 +1,22 @@
 #![allow(unused_imports)]
 use eval::eval;
-use super::{HashMap, Env, Nil, Atom, List};
+use super::{HashMap, Env, Nil, Atom, List, Tree};
+
+fn make_atom(s: &str) -> Tree<~str> {
+    Atom(s.to_owned())
+}
 
 #[test]
 fn test_eval_symbol() {
     let mut env = Env::new();
 
     // symbol not found in env should be eval err
-    let foo = Atom(~"foo");
-    let bar = Atom(~"bar");
+    let foo = make_atom("foo");
+    let bar = make_atom("bar");
 
     assert!( eval(env.clone(), foo.clone()).is_err() );
 
-    env.bindings.insert(~"foo", bar.clone());
+    env.bindings.insert("foo".to_owned(), bar.clone());
     let foo_eval = eval(env.clone(), foo.clone());
     assert!( foo_eval.is_ok() && foo_eval.unwrap().val1().eq(&bar) );
 }
@@ -27,9 +31,9 @@ fn test_eval_quote() {
     let mut env = Env::new();
 
     let nil = List(~[]);
-    let foo = Atom(~"foo");
-    let bar = Atom(~"bar");
-    let quote = Atom(~"quote");
+    let foo = make_atom("foo");
+    let bar = make_atom("bar");
+    let quote = make_atom("quote");
 
     let qnil = List(~[quote.clone(), nil.clone()]);
     let qnil_eval = eval(env.clone(), qnil);
@@ -42,11 +46,11 @@ fn test_eval_quote() {
 
     // "(quote foo)" should evaluate to "foo" regardless of what the symbol foo is
     // bound to in the environment
-    env.bindings.insert(~"foo", bar.clone());
+    env.bindings.insert("foo".to_owned(), bar.clone());
     let qfoo2_eval = eval(env.clone(), qfoo2);
     assert!( qfoo2_eval.is_ok() && qfoo2_eval.unwrap().val1().eq(&foo) );
 
-    let list = List(~[foo.clone(), bar.clone(), Atom(~"baz")]);
+    let list = List(~[foo.clone(), bar.clone(), make_atom("baz")]);
     let qlist = List(~[quote.clone(), list.clone()]);
     let qlist_eval = eval(env, qlist);
     assert!( qlist_eval.is_ok() && qlist_eval.unwrap().val1().eq(&list) );
@@ -56,12 +60,12 @@ fn test_eval_quote() {
 fn test_eval_atom() {
     let mut env = Env::new();
 
-    let foo = Atom(~"foo");
-    let bar = Atom(~"bar");
+    let foo = make_atom("foo");
+    let bar = make_atom("bar");
     let nil = List(~[]);
-    let quote = Atom(~"quote");
-    let atom = Atom(~"atom");
-    let t = Atom(~"t");
+    let quote = make_atom("quote");
+    let atom = make_atom("atom");
+    let t = make_atom("t");
 
     let qfoo = List(~[quote.clone(), foo.clone()]);
     let qnil = List(~[quote.clone(), nil.clone()]);
@@ -83,12 +87,12 @@ fn test_eval_atom() {
 fn test_eval_eq() {
     let mut env = Env::new();
 
-    let foo = Atom(~"foo");
-    let bar = Atom(~"bar");
+    let foo = make_atom("foo");
+    let bar = make_atom("bar");
     let nil = List(~[]);
-    let quote = Atom(~"quote");
-    let t = Atom(~"t");
-    let eq = Atom(~"eq");
+    let quote = make_atom("quote");
+    let t = make_atom("t");
+    let eq = make_atom("eq");
 
     let qnil = List(~[quote.clone(), nil.clone()]);
     let qfoo = List(~[quote.clone(), foo.clone()]);
@@ -111,11 +115,11 @@ fn test_eval_eq() {
 fn test_eval_first() {
     let mut env = Env::new();
 
-    let foo = Atom(~"foo");
-    let bar = Atom(~"bar");
+    let foo = make_atom("foo");
+    let bar = make_atom("bar");
     let nil = List(~[]);
-    let quote = Atom(~"quote");
-    let first = Atom(~"first");
+    let quote = make_atom("quote");
+    let first = make_atom("first");
 
     let qfoo = List(~[quote.clone(), foo.clone()]);
     let qnil = List(~[quote.clone(), nil.clone()]);
@@ -137,11 +141,11 @@ fn test_eval_first() {
 fn test_eval_rest() {
     let mut env = Env::new();
 
-    let foo = Atom(~"foo");
-    let bar = Atom(~"bar");
+    let foo = make_atom("foo");
+    let bar = make_atom("bar");
     let nil = List(~[]);
-    let quote = Atom(~"quote");
-    let rest = Atom(~"rest");
+    let quote = make_atom("quote");
+    let rest = make_atom("rest");
 
     let qfoo = List(~[quote.clone(), foo.clone()]);
     let qnil = List(~[quote.clone(), nil.clone()]);
@@ -164,10 +168,10 @@ fn test_eval_rest() {
 fn test_eval_cons() {
     let mut env = Env::new();
 
-    let foo = Atom(~"foo");
-    let bar = Atom(~"bar");
-    let quote = Atom(~"quote");
-    let cons = Atom(~"cons");
+    let foo = make_atom("foo");
+    let bar = make_atom("bar");
+    let quote = make_atom("quote");
+    let cons = make_atom("cons");
 
     let bar_list = List(~[bar.clone()]);
     let qbar_list = List(~[quote.clone(), bar_list.clone()]);
@@ -185,15 +189,15 @@ fn test_eval_cons() {
 fn test_eval_cond() {
     let mut env = Env::new();
 
-    let foo = Atom(~"foo");
-    let bar = Atom(~"bar");
-    let baz = Atom(~"baz");
-    let quote = Atom(~"quote");
-    let cond = Atom(~"cond");
+    let foo = make_atom("foo");
+    let bar = make_atom("bar");
+    let baz = make_atom("baz");
+    let quote = make_atom("quote");
+    let cond = make_atom("cond");
     let qfoo = List(~[quote.clone(), foo.clone()]);
     let qbar = List(~[quote.clone(), bar.clone()]);
     let qbaz = List(~[quote.clone(), baz.clone()]);
-    let qt = List(~[quote.clone(), Atom(~"t")]);
+    let qt = List(~[quote.clone(), make_atom("t")]);
 
     let list = List(~[cond.clone(), 
                       List(~[qfoo.clone(), qbar.clone()]), 

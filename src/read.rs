@@ -35,7 +35,7 @@ pub fn tokenize(s: &str) -> TokenStream {
     s1 = s1.replace("{", " { ").replace("}", " } ");
     s1 = s1.replace("'", " ' ");
 
-    let x: ~[&str] = s1.split(|c: char| is_whitespace(c)).collect();
+    let x: Vec<&str> = s1.split(|c: char| is_whitespace(c)).collect();
 
     let mut ret: Vec<~str> = vec!();
     for &e in x.iter() {

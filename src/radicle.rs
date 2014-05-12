@@ -33,7 +33,7 @@ fn main() {
     } else if args.len() > 2 {
         println!("radicle: Only one argument allowed.");
     } else {
-        interpret_file(args[1]);
+        interpret_file(args.get(1).clone());
     }
 }
 
