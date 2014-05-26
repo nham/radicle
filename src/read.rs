@@ -5,7 +5,7 @@ use super::{Expr, Exprs, MoveItems, Atom, List};
 
 /// Intermediate representation after tokenization and before it gets read into
 /// an expression.
-pub type TokenStream = Peekable<~str, MoveItems<~str>>;
+pub type TokenStream = Peekable<String, MoveItems<String>>;
 
 
 /// Tries to read a string of symbols into a list of expressions
@@ -35,9 +35,9 @@ pub fn tokenize(s: &str) -> TokenStream {
     s1 = s1.replace("{", " { ").replace("}", " } ");
     s1 = s1.replace("'", " ' ");
 
-    let x: Vec<&str> = s1.split(|c: char| is_whitespace(c)).collect();
+    let x: Vec<&str> = s1.as_slice().split(|c: char| is_whitespace(c)).collect();
 
-    let mut ret: Vec<~str> = vec!();
+    let mut ret: Vec<String> = vec!();
     for &e in x.iter() {
         if e != "" {
             ret.push(e.to_owned());
@@ -50,11 +50,11 @@ pub fn tokenize(s: &str) -> TokenStream {
 /// Attempts to read an entire expression from the token stream. Detects
 /// mismatched parentheses. Also expands ' <expr> into (quote <expr)
 pub fn read_from(v: &mut TokenStream) -> Result<Expr, &'static str> {
-    fn is_beginning_list_sep(s: &~str) -> bool {
+    fn is_beginning_list_sep(s: &String) -> bool {
         "(".equiv(s) || "[".equiv(s) || "{".equiv(s)
     }
 
-    fn is_ending_list_sep(s: &~str) -> bool {
+    fn is_ending_list_sep(s: &String) -> bool {
         ")".equiv(s) || "]".equiv(s) || "}".equiv(s)
     }
 

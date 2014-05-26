@@ -37,7 +37,7 @@ fn main() {
     }
 }
 
-pub fn interpret_file(fname: ~str) {
+pub fn interpret_file(fname: String) {
     use std::io::File;
     let path = Path::new(fname.clone());
 
@@ -79,8 +79,8 @@ pub fn repl() {
 
 
 /// A convenience function that calls read & eval and displays their results
-pub fn read_eval(s: &str, env: Env) -> Option<Env> {
-    let parsed = read(s);
+pub fn read_eval(s: String, env: Env) -> Option<Env> {
+    let parsed = read(s.as_slice());
     if parsed.is_ok() {
         let mut expr_it = parsed.unwrap().move_iter();
         let eval_help = |env: Env, expr| {
@@ -101,13 +101,13 @@ pub fn read_eval(s: &str, env: Env) -> Option<Env> {
 
 
 /// The representation of Lisp expressions
-pub type Expr = Tree<~str>;
+pub type Expr = Tree<String>;
 pub type Exprs = Vec<Expr>;
 
 
 #[deriving(Clone)]
 pub struct Env {
-    bindings: HashMap<~str, Expr>,
+    bindings: HashMap<String, Expr>,
 }
 
 impl Env {
@@ -115,13 +115,13 @@ impl Env {
         Env { bindings: HashMap::new() }
     }
 
-    fn find_copy(&self, key: &~str) -> Option<Expr> {
+    fn find_copy(&self, key: &String) -> Option<Expr> {
         self.bindings.find_copy(key)
     }
 }
 
 /// Wrapping the standard Tree methods for aesthetic reasons, I guess
-impl ::tree::Tree<~str> {
+impl ::tree::Tree<String> {
     fn is_atom(&self) -> bool {
         self.is_leaf()
     }

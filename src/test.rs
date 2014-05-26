@@ -2,7 +2,7 @@
 use eval::eval;
 use super::{HashMap, Env, Nil, Atom, List, Tree};
 
-fn make_atom(s: &str) -> Tree<~str> {
+fn make_atom(s: &str) -> Tree<String> {
     Atom(s.to_owned())
 }
 

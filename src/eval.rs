@@ -191,9 +191,9 @@ fn eval_defun(env: Env, vec: Vec<Expr>) -> EvalResult {
 
 
 struct FuncLiteral {
-    params: Vec<~str>,
+    params: Vec<String>,
     body: Expr,
-    sym: Option<~str>, // lambdas will have None, labels will have Some
+    sym: Option<String>, // lambdas will have None, labels will have Some
 }
 
 
@@ -298,7 +298,7 @@ fn eval_func_call(env: Env, vec: Vec<Expr>) -> EvalResult {
     }
 
     let FuncLiteral{params, body, sym} = func_lit.unwrap();
-    let mut bindings = HashMap::<~str, Expr>::new();
+    let mut bindings = HashMap::<String, Expr>::new();
     if sym.is_some() {
         bindings.insert(sym.unwrap(), op_expr.clone());
     }
@@ -310,7 +310,7 @@ fn eval_func_call(env: Env, vec: Vec<Expr>) -> EvalResult {
     let mut param_iter = params.move_iter();
 
     for arg in vec_iter {
-        let next_param: ~str  = param_iter.next().unwrap();
+        let next_param: String  = param_iter.next().unwrap();
         debug!("  - eval of {:?} --> {}\n", arg, next_param);
         bindings.insert(next_param, 
                         try!( eval(env.clone(), arg) ).val1());
