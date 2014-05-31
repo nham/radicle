@@ -4,6 +4,7 @@
 
 #![feature(phase)]
 #[phase(syntax, link)] extern crate log;
+extern crate debug;
 
 
 extern crate collections;
@@ -47,7 +48,7 @@ pub fn interpret_file(fname: String) {
         if contents.is_err() {
             println!("{}", contents.unwrap_err());
         } else {
-            let data = str::from_utf8(contents.unwrap().as_slice()).unwrap().to_owned(); // ay yi yi
+            let data = str::from_utf8(contents.unwrap().as_slice()).unwrap().to_string(); // ay yi yi
             read_eval(data, Env::new());
         }
     } else {

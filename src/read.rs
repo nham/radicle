@@ -40,7 +40,7 @@ pub fn tokenize(s: &str) -> TokenStream {
     let mut ret: Vec<String> = vec!();
     for &e in x.iter() {
         if e != "" {
-            ret.push(e.to_owned());
+            ret.push(e.to_string());
         }
     }
 
@@ -87,7 +87,7 @@ pub fn read_from(v: &mut TokenStream) -> Result<Expr, &'static str> {
             } else if "'".equiv(&s) {
                 match read_from(v) {
                     Err(e) => Err(e),
-                    Ok(expr) => Ok( List( vec!(Atom("quote".to_owned()), expr)) ),
+                    Ok(expr) => Ok( List( vec!(Atom("quote".to_string()), expr)) ),
                 }
             } else {
                 Ok( Atom(s) )

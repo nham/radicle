@@ -54,7 +54,7 @@ fn eval_atom(env: Env, vec: Vec<Expr>) -> EvalResult {
     } else {
         let val = try!( eval(env.clone(), vec.get(1).clone() ) ).val1();
         if val.is_atom() || val.is_empty_list() {
-            Ok( (env, Atom("t".to_owned())) )
+            Ok( (env, Atom("t".to_string())) )
         } else {
             Ok( (env, Tree::empty_branch()) )
         }
@@ -71,7 +71,7 @@ fn eval_eq(env: Env, vec: Vec<Expr>) -> EvalResult {
         let val2 = try!( eval(env.clone(), vec.get(2).clone() ) ).val1();
         if (val1.is_empty_list() && val2.is_empty_list())
            || (val1.is_atom() && val2.is_atom() && val1.eq(&val2)) {
-            Ok( (env, Atom("t".to_owned())) )
+            Ok( (env, Atom("t".to_string())) )
         } else {
             Ok( (env, Tree::empty_branch()) )
         }
@@ -145,7 +145,7 @@ fn eval_cond(env: Env, vec: Vec<Expr>) -> EvalResult {
             let res = eval(env.clone(), list.get(0).clone());
             let val = try!(res).val1();
 
-            if val.eq( &Atom("t".to_owned()) ) {
+            if val.eq( &Atom("t".to_string()) ) {
                 return eval(env, list.get(1).clone() );
             }
         }
@@ -179,9 +179,9 @@ fn eval_defun(env: Env, vec: Vec<Expr>) -> EvalResult {
         let params = vec.get(2).clone();
         let body = vec.get(3).clone();
 
-        let label_expr = List( vec!(Atom("label".to_owned()), 
+        let label_expr = List( vec!(Atom("label".to_string()), 
                                     func_name,
-                                    List( vec!(Atom("lambda".to_owned()), params, body) ))
+                                    List( vec!(Atom("lambda".to_string()), params, body) ))
                              );
         let mut new_env = env.clone();
         new_env.bindings.insert(vec.get(1).clone().unwrap_leaf(), label_expr);
