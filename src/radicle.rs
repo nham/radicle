@@ -9,7 +9,7 @@ extern crate debug;
 
 extern crate collections;
 
-pub use collections::HashMap;
+pub use std::collections::HashMap;
 pub use std::vec::MoveItems;
 use std::str;
 use std::os;
