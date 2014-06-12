@@ -1,6 +1,6 @@
 use std::fmt::Show;
 
-#[deriving(Eq, Clone)]
+#[deriving(PartialEq, Clone)]
 pub enum Tree<T> {
     Nil,
     Leaf(T),
