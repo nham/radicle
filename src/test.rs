@@ -45,7 +45,6 @@ fn test_eval_quote() {
     let nil = make_nil();
     let foo = make_atom("foo");
     let bar = make_atom("bar");
-    let quote = make_atom("quote");
 
     let qnil = quote_expr(nil.clone());
     let qnil_eval = eval(env.clone(), qnil);
@@ -70,12 +69,11 @@ fn test_eval_quote() {
 
 #[test]
 fn test_eval_atom() {
-    let mut env = Env::new();
+    let env = Env::new();
 
     let foo = make_atom("foo");
     let bar = make_atom("bar");
     let nil = make_nil();
-    let quote = make_atom("quote");
     let atom = make_atom("atom");
     let t = make_atom("t");
 
@@ -97,12 +95,11 @@ fn test_eval_atom() {
 
 #[test]
 fn test_eval_eq() {
-    let mut env = Env::new();
+    let env = Env::new();
 
     let foo = make_atom("foo");
     let bar = make_atom("bar");
     let nil = make_nil();
-    let quote = make_atom("quote");
     let t = make_atom("t");
     let eq = make_atom("eq");
 
@@ -125,12 +122,11 @@ fn test_eval_eq() {
 
 #[test]
 fn test_eval_first() {
-    let mut env = Env::new();
+    let env = Env::new();
 
     let foo = make_atom("foo");
     let bar = make_atom("bar");
     let nil = make_nil();
-    let quote = make_atom("quote");
     let first = make_atom("first");
 
     let qfoo = quote_expr(foo.clone());
@@ -151,12 +147,11 @@ fn test_eval_first() {
 
 #[test]
 fn test_eval_rest() {
-    let mut env = Env::new();
+    let env = Env::new();
 
     let foo = make_atom("foo");
     let bar = make_atom("bar");
     let nil = make_nil();
-    let quote = make_atom("quote");
     let rest = make_atom("rest");
 
     let qfoo = quote_expr(foo.clone());
@@ -178,11 +173,10 @@ fn test_eval_rest() {
 
 #[test]
 fn test_eval_cons() {
-    let mut env = Env::new();
+    let env = Env::new();
 
     let foo = make_atom("foo");
     let bar = make_atom("bar");
-    let quote = make_atom("quote");
     let cons = make_atom("cons");
 
     let bar_list = List(vec!(bar.clone()));
@@ -199,12 +193,11 @@ fn test_eval_cons() {
 
 #[test]
 fn test_eval_cond() {
-    let mut env = Env::new();
+    let env = Env::new();
 
     let foo = make_atom("foo");
     let bar = make_atom("bar");
     let baz = make_atom("baz");
-    let quote = make_atom("quote");
     let cond = make_atom("cond");
 
     let qfoo = quote_expr(foo.clone());
