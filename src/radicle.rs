@@ -1,13 +1,10 @@
 //! A lisp interpreter.
 
-#![crate_id = "radicle"]
+#![crate_name = "radicle"]
 
 #![feature(phase)]
 #[phase(plugin, link)] extern crate log;
 extern crate debug;
-
-
-extern crate collections;
 
 pub use std::collections::HashMap;
 pub use std::vec::MoveItems;
