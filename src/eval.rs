@@ -1,19 +1,19 @@
 use super::{Expr, Env, HashMap, Tree, Nil, Atom, List};
 
 type EnvExpr = (Env, Expr);
-pub type EvalResult = Result<EnvExpr, &'static str>;
+pub type EvalResult = Result<Expr, &'static str>;
 
 /// The heart and soul of Radicle.
-pub fn eval(env: Env, expr: Expr) -> EvalResult {
+pub fn eval(env: &mut Env, expr: Expr) -> EvalResult {
     debug!(" :: Entered eval, expr = {:?}\n", expr);
     match expr {
-        Nil => Ok( (env, Nil) ),
+        Nil => Ok(Nil),
         Atom(ref s) => {
             let res = env.find_copy(s);
             if res.is_none() {
                 Err("Symbol not found.")
             } else {
-                Ok( (env, res.unwrap()) )
+                Ok(res.unwrap())
             }
         },
         List(vec) => {
@@ -25,7 +25,7 @@ pub fn eval(env: Env, expr: Expr) -> EvalResult {
                 if vec.len() != 2 {
                     Err("`quote` expects exactly one argument.")
                 } else {
-                    Ok( (env, vec[1].clone()) )
+                    Ok(vec[1].clone())
                 }
             } else if is_symbol("atom", &vec[0]) {
                 eval_atom(env, vec)
@@ -48,46 +48,46 @@ pub fn eval(env: Env, expr: Expr) -> EvalResult {
     }
 }
 
-fn eval_atom(env: Env, vec: Vec<Expr>) -> EvalResult {
+fn eval_atom(env: &mut Env, vec: Vec<Expr>) -> EvalResult {
     if vec.len() != 2 {
         Err("`atom` expects exactly one argument.")
     } else {
-        let val = try!( eval(env.clone(), vec[1].clone() ) ).val1();
+        let val = try!( eval(env, vec[1].clone() ) );
         if val.is_atom() || val.is_empty_list() {
-            Ok( (env, Atom("t".to_string())) )
+            Ok( Atom("t".to_string()) )
         } else {
-            Ok( (env, Tree::empty_branch()) )
+            Ok( Tree::empty_branch() )
         }
     }
 }
 
 
-fn eval_eq(env: Env, vec: Vec<Expr>) -> EvalResult {
+fn eval_eq(env: &mut Env, vec: Vec<Expr>) -> EvalResult {
 
     if vec.len() != 3 {
         Err("`eq` expects exactly two arguments.")
     } else {
-        let val1 = try!( eval(env.clone(), vec[1].clone()) ).val1();
-        let val2 = try!( eval(env.clone(), vec[2].clone() ) ).val1();
+        let val1 = try!( eval(env, vec[1].clone()) );
+        let val2 = try!( eval(env, vec[2].clone() ) );
         if (val1.is_empty_list() && val2.is_empty_list())
            || (val1.is_atom() && val2.is_atom() && val1.eq(&val2)) {
-            Ok( (env, Atom("t".to_string())) )
+            Ok( Atom("t".to_string()) )
         } else {
-            Ok( (env, Tree::empty_branch()) )
+            Ok( Tree::empty_branch() )
         }
     }
 }
 
 
-fn eval_first(env: Env, vec: Vec<Expr>) -> EvalResult {
+fn eval_first(env: &mut Env, vec: Vec<Expr>) -> EvalResult {
 
     if vec.len() != 2 {
         Err("`first` expects exactly one argument.")
     } else {
-        let val = try!( eval(env.clone(), vec[1].clone() ) ).val1();
+        let val = try!( eval(env, vec[1].clone() ) );
         if val.is_list() && !val.is_empty_list() {
             let list = val.unwrap_branch();
-            Ok( (env, list[0].clone()) )
+            Ok( list[0].clone() )
         } else {
             debug!("argument is {:?}\n", val);
             Err("`first`'s argument must be a non-empty list")
@@ -95,41 +95,41 @@ fn eval_first(env: Env, vec: Vec<Expr>) -> EvalResult {
     }
 }
 
-fn eval_rest(env: Env, vec: Vec<Expr>) -> EvalResult {
+fn eval_rest(env: &mut Env, vec: Vec<Expr>) -> EvalResult {
 
     if vec.len() != 2 {
         Err("`rest` expects exactly one argument.")
     } else {
-        let val = try!( eval(env.clone(), vec[1].clone() ) ).val1();
+        let val = try!( eval(env, vec[1].clone() ) );
         if val.is_list() && !val.is_empty_list() {
             let mut list = val.unwrap_branch();
             list.shift();
-            Ok( (env.clone(), List(list)) )
+            Ok( List(list) )
         } else {
             Err("`rest`'s argument must be a non-empty list")
         }
     }
 }
 
-fn eval_cons(env: Env, vec: Vec<Expr>) -> EvalResult {
+fn eval_cons(env: &mut Env, vec: Vec<Expr>) -> EvalResult {
 
     if vec.len() != 3 {
         Err("`cons` expects exactly two arguments.")
     } else {
-        let val1 = try!( eval(env.clone(), vec[1].clone()) ).val1();
-        let val2 = try!( eval(env.clone(), vec[2].clone()) ).val1();
+        let val1 = try!( eval(env, vec[1].clone()) );
+        let val2 = try!( eval(env, vec[2].clone()) );
 
         if val2.is_list() {
             let mut list = val2.unwrap_branch();
             list.unshift(val1);
-            Ok( (env, List(list)) )
+            Ok( List(list) )
         } else {
             Err("`cons`'s second argument must be a list")
         }
     }
 }
 
-fn eval_cond(env: Env, vec: Vec<Expr>) -> EvalResult {
+fn eval_cond(env: &mut Env, vec: Vec<Expr>) -> EvalResult {
     let mut i = 1;
     while i < vec.len() {
         if !vec[i].is_list() {
@@ -142,8 +142,8 @@ fn eval_cond(env: Env, vec: Vec<Expr>) -> EvalResult {
         if list.len() != 2 {
             return Err("Invalid argument to `cond`");
         } else {
-            let res = eval(env.clone(), list[0].clone());
-            let val = try!(res).val1();
+            let res = eval(env, list[0].clone());
+            let val = try!(res);
 
             if val.eq( &Atom("t".to_string()) ) {
                 return eval(env, list[1].clone() );
@@ -153,11 +153,11 @@ fn eval_cond(env: Env, vec: Vec<Expr>) -> EvalResult {
         i += 1;
     }
 
-    Ok( (env, Nil) )
+    Ok(Nil)
 }
 
 
-fn eval_defun(env: Env, vec: Vec<Expr>) -> EvalResult {
+fn eval_defun(env: &mut Env, vec: Vec<Expr>) -> EvalResult {
     if vec.len() != 4 {
         Err("`defun` expects exactly three arguments.")
     } else {
@@ -183,9 +183,8 @@ fn eval_defun(env: Env, vec: Vec<Expr>) -> EvalResult {
                                     func_name,
                                     List( vec!(Atom("lambda".to_string()), params, body) ))
                              );
-        let mut new_env = env.clone();
-        new_env.bindings.insert(vec[1].clone().unwrap_leaf(), label_expr);
-        Ok( (new_env, Nil) )
+        env.bindings.insert(vec[1].clone().unwrap_leaf(), label_expr);
+        Ok(Nil)
     }
 }
 
@@ -264,7 +263,7 @@ fn is_symbol(op: &str, expr: &Expr) -> bool {
     }
 }
 
-fn eval_func_call(env: Env, vec: Vec<Expr>) -> EvalResult {
+fn eval_func_call(env: &mut Env, vec: Vec<Expr>) -> EvalResult {
     let num_args = vec.len() - 1;
 
     let mut vec_iter = vec.move_iter();
@@ -289,7 +288,7 @@ fn eval_func_call(env: Env, vec: Vec<Expr>) -> EvalResult {
 
     let mut func_lit = parse_func_literal(&op_expr);
     if func_lit.is_none() {
-        op_expr = try!( eval(env.clone(), op_expr) ).val1();
+        op_expr = try!( eval(env, op_expr) );
 
         func_lit = parse_func_literal(&op_expr);
         if func_lit.is_none() {
@@ -313,7 +312,7 @@ fn eval_func_call(env: Env, vec: Vec<Expr>) -> EvalResult {
         let next_param: String  = param_iter.next().unwrap();
         debug!("  - eval of {:?} --> {}\n", arg, next_param);
         bindings.insert(next_param, 
-                        try!( eval(env.clone(), arg) ).val1());
+                        try!( eval(env, arg) ));
     }
 
     let mut new_env = env.clone();
@@ -322,6 +321,6 @@ fn eval_func_call(env: Env, vec: Vec<Expr>) -> EvalResult {
     }
 
     debug!(" :: arguments have been passed into environment, evaling lambda body\n");
-    let val = try!( eval(new_env, body) ).val1();
-    Ok( (env, val) )
+    let val = try!( eval(&mut new_env, body) );
+    Ok(val)
 }

@@ -46,7 +46,7 @@ pub fn interpret_file(fname: String) {
             println!("{}", contents.unwrap_err());
         } else {
             let data = str::from_utf8(contents.unwrap().as_slice()).unwrap().to_string(); // ay yi yi
-            read_eval(data, Env::new());
+            read_eval(data, &mut Env::new());
         }
     } else {
         println!("radicle: can't open file {}", fname);
@@ -63,11 +63,7 @@ pub fn repl() {
     print!("repl> ");
     stdio::flush();
     for line in stdin.lines() {
-
-        match read_eval(line.unwrap(), env.clone()) {
-            Some(new_env) => { env = new_env; },
-            None => ()
-        }
+        read_eval(line.unwrap(), &mut env);
 
         print!("repl> ");
         stdio::flush();
@@ -77,23 +73,19 @@ pub fn repl() {
 
 
 /// A convenience function that calls read & eval and displays their results
-pub fn read_eval(s: String, env: Env) -> Option<Env> {
+pub fn read_eval(s: String, env: &mut Env) {
     let parsed = read(s.as_slice());
     if parsed.is_ok() {
-        let mut expr_it = parsed.unwrap().move_iter();
-        let eval_help = |env: Env, expr| {
-            let res = eval(env.clone(), expr);
-                match res {
-                    Ok( (env, Nil) ) => env,
-                    Ok( (env, expr) ) => { expr.print(); env },
-                    Err(ref x) => { println!("\nError: {}", *x); env }
-                }
-        };
-         Some( expr_it.fold(env, eval_help) )
+        for expr in parsed.unwrap().move_iter() {
+            match eval(env, expr) {
+                Ok(Nil) => {},
+                Ok(expr) => expr.print(),
+                Err(ref x) => println!("\nError: {}", *x),
+            }
+        }
 
     } else {
         println!("\nParse error: {}", parsed.err().unwrap());
-        None
     }
 }
 
