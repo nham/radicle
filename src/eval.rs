@@ -1,6 +1,5 @@
 use super::{Expr, Env, HashMap, Tree, Nil, Atom, List};
 
-type EnvExpr = (Env, Expr);
 pub type EvalResult = Result<Expr, &'static str>;
 
 /// The heart and soul of Radicle.
