@@ -66,24 +66,21 @@ pub fn repl() {
 
 }
 
-
 /// A convenience function that calls read & eval and displays their results
 pub fn read_eval(s: String, env: &mut Env) {
-    let parsed = read(s.as_slice());
-    if parsed.is_ok() {
-        for expr in parsed.unwrap().move_iter() {
-            match eval(env, expr) {
-                Ok(Nil) => {},
-                Ok(expr) => expr.print(),
-                Err(ref x) => println!("\nError: {}", *x),
+    match read(s.as_slice()) {
+        Err(e) => println!("\nParse error: {}", e),
+        Ok(parsed) => {
+            for expr in parsed.move_iter() {
+                match eval(env, expr) {
+                    Ok(Nil) => {},
+                    Ok(expr) => expr.print(),
+                    Err(ref x) => println!("\nError: {}", *x),
+                }
             }
         }
-
-    } else {
-        println!("\nParse error: {}", parsed.err().unwrap());
     }
 }
-
 
 /// The representation of Lisp expressions
 pub type Expr = Tree<String>;
