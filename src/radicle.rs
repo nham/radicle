@@ -84,8 +84,6 @@ pub fn read_eval(s: String, env: &mut Env) {
 
 /// The representation of Lisp expressions
 pub type Expr = Tree<String>;
-pub type Exprs = Vec<Expr>;
-
 
 #[deriving(Clone)]
 pub struct Env {

@@ -1,31 +1,25 @@
 use std::char::is_whitespace;
 use std::iter::Peekable;
 
-use super::{Expr, Exprs, MoveItems, Atom, List};
+use super::{Expr, MoveItems, Atom, List};
 
 /// Intermediate representation after tokenization and before it gets read into
 /// an expression.
 pub type TokenStream = Peekable<String, MoveItems<String>>;
 
-
 /// Tries to read a string of symbols into a list of expressions
-pub fn read(s: &str) -> Result<Exprs, &'static str> {
+pub fn read(s: &str) -> Result<Vec<Expr>, &'static str> {
     let mut stream = tokenize(s);
-
-    let mut res: Exprs = vec!();
+    let mut res = vec!();
 
     while !stream.is_empty() {
-        let x = read_from(&mut stream);
-        if x.is_err() {
-            return Err( x.err().unwrap() );
-        } else {
-            res.push( x.ok().unwrap() );
+        match read_from(&mut stream) {
+            Err(e) => return Err(e),
+            Ok(x) => res.push(x),
         }
     }
-
-    Ok( res )
+    Ok(res)
 }
-
 
 /// Turns a string into a stream of tokens. Currently assumes that tokens
 /// do not have spaces or parens/brackets/braces in them.
