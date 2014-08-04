@@ -83,6 +83,24 @@ pub fn read_eval(s: String, env: &mut Env) {
 /// The representation of Lisp expressions
 pub type Expr = Expression<String>;
 
+type Sym = String;
+
+// structured expression,
+enum StructExpr {
+    ENil,
+    ESym(Sym),
+    EQuote(Box<StructExpr>),
+    EAtom(Box<StructExpr>),
+    EEq(Box<StructExpr>, Box<StructExpr>),
+    EFirst(Box<StructExpr>),
+    ERest(Box<StructExpr>),
+    ECons(Box<StructExpr>, Box<StructExpr>),
+    ECond(Vec<(StructExpr, StructExpr)>),
+    ELambda(Vec<Sym>, Box<StructExpr>),
+    ELabel(Sym, Vec<Sym>, Box<StructExpr>),
+    ECall(Box<StructExpr>, Vec<StructExpr>),
+}
+
 #[deriving(Clone)]
 pub struct Env {
     bindings: HashMap<String, Expr>,
