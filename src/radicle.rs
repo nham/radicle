@@ -8,7 +8,6 @@ extern crate debug;
 
 pub use std::collections::HashMap;
 pub use std::vec::MoveItems;
-use std::str;
 use std::os;
 
 pub use tree::{Tree, Nil};
@@ -52,9 +51,7 @@ pub fn interpret_file(fname: String) {
 }
 
 pub fn repl() {
-    use std::io::BufferedReader;
-    use std::io::stdin;
-    use std::io::stdio;
+    use std::io::{BufferedReader, stdin, stdio};
 
     let mut env = Env::new();
     let mut stdin = BufferedReader::new(stdin());
