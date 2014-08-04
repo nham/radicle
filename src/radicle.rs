@@ -11,8 +11,7 @@ pub use std::vec::MoveItems;
 use std::str;
 use std::os;
 
-pub use tree::Tree;
-pub use tree::Nil;
+pub use tree::{Tree, Nil};
 pub use Atom = tree::Leaf;
 pub use List = tree::Branch;
 
@@ -41,12 +40,11 @@ pub fn interpret_file(fname: String) {
 
     if path.is_file() {
         let mut hw_file = File::open(&path);
-        let contents = hw_file.read_to_end();
-        if contents.is_err() {
-            println!("{}", contents.unwrap_err());
-        } else {
-            let data = str::from_utf8(contents.unwrap().as_slice()).unwrap().to_string(); // ay yi yi
-            read_eval(data, &mut Env::new());
+        match hw_file.read_to_string() {
+            Err(e) => println!("{}", e),
+            Ok(s) => {
+                read_eval(s, &mut Env::new());
+            }
         }
     } else {
         println!("radicle: can't open file {}", fname);
