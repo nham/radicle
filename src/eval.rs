@@ -1,4 +1,4 @@
-use super::{Expr, Env, HashMap, Tree, Nil, Atom, List};
+use super::{Expr, Env, HashMap, Expression, Nil, Atom, List};
 
 pub type EvalResult = Result<Expr, &'static str>;
 
@@ -55,7 +55,7 @@ fn eval_atom(env: &mut Env, vec: Vec<Expr>) -> EvalResult {
         if val.is_atom() || val.is_empty_list() {
             Ok( Atom("t".to_string()) )
         } else {
-            Ok( Tree::empty_branch() )
+            Ok( Expression::empty_list() )
         }
     }
 }
@@ -72,7 +72,7 @@ fn eval_eq(env: &mut Env, vec: Vec<Expr>) -> EvalResult {
            || (val1.is_atom() && val2.is_atom() && val1.eq(&val2)) {
             Ok( Atom("t".to_string()) )
         } else {
-            Ok( Tree::empty_branch() )
+            Ok( Expression::empty_list() )
         }
     }
 }
@@ -85,7 +85,7 @@ fn eval_first(env: &mut Env, vec: Vec<Expr>) -> EvalResult {
     } else {
         let val = try!( eval(env, vec[1].clone() ) );
         if val.is_list() && !val.is_empty_list() {
-            let list = val.unwrap_branch();
+            let list = val.unwrap_list();
             Ok( list[0].clone() )
         } else {
             debug!("argument is {:?}\n", val);
@@ -101,7 +101,7 @@ fn eval_rest(env: &mut Env, vec: Vec<Expr>) -> EvalResult {
     } else {
         let val = try!( eval(env, vec[1].clone() ) );
         if val.is_list() && !val.is_empty_list() {
-            let mut list = val.unwrap_branch();
+            let mut list = val.unwrap_list();
             list.shift();
             Ok( List(list) )
         } else {
@@ -119,7 +119,7 @@ fn eval_cons(env: &mut Env, vec: Vec<Expr>) -> EvalResult {
         let val2 = try!( eval(env, vec[2].clone()) );
 
         if val2.is_list() {
-            let mut list = val2.unwrap_branch();
+            let mut list = val2.unwrap_list();
             list.unshift(val1);
             Ok( List(list) )
         } else {
@@ -136,7 +136,7 @@ fn eval_cond(env: &mut Env, vec: Vec<Expr>) -> EvalResult {
         }
 
         let arg = vec[i].clone();
-        let list = arg.unwrap_branch();
+        let list = arg.unwrap_list();
 
         if list.len() != 2 {
             return Err("Invalid argument to `cond`");
@@ -166,7 +166,7 @@ fn eval_defun(env: &mut Env, vec: Vec<Expr>) -> EvalResult {
         }
 
         {
-            let params = vec[2].get_ref_branch();
+            let params = vec[2].get_ref_list();
             for p in params.iter() {
                 if !p.is_atom() {
                     return Err("Second argument to `defun` must be a list of params");
@@ -182,7 +182,7 @@ fn eval_defun(env: &mut Env, vec: Vec<Expr>) -> EvalResult {
                                     func_name,
                                     List( vec!(Atom("lambda".to_string()), params, body) ))
                              );
-        env.bindings.insert(vec[1].clone().unwrap_leaf(), label_expr);
+        env.bindings.insert(vec[1].clone().unwrap_atom(), label_expr);
         Ok(Nil)
     }
 }
@@ -209,7 +209,7 @@ fn parse_lambda_literal(expr: &Expr) -> Option<FuncLiteral> {
         return None;
     }
 
-    let vec = expr.get_ref_branch();
+    let vec = expr.get_ref_list();
 
     if vec.len() != 3 
        || !vec[1].is_list() 
@@ -217,14 +217,14 @@ fn parse_lambda_literal(expr: &Expr) -> Option<FuncLiteral> {
         return None;
     }
 
-    let params = vec[1].get_ref_branch();
+    let params = vec[1].get_ref_list();
     let mut plist = vec!();
 
     for p in params.iter() {
         if !p.is_atom() {
             return None;
         } else {
-            plist.push ( p.clone().unwrap_leaf() );
+            plist.push ( p.clone().unwrap_atom() );
         }
     }
 
@@ -236,7 +236,7 @@ fn parse_label_literal(expr: &Expr) -> Option<FuncLiteral> {
         return None;
     }
 
-    let vec = expr.get_ref_branch();
+    let vec = expr.get_ref_list();
 
     if vec.len() != 3 
        || !vec[1].is_atom() 
@@ -248,14 +248,14 @@ fn parse_label_literal(expr: &Expr) -> Option<FuncLiteral> {
 
     if lit.is_none() { return None; }
     let mut func = lit.unwrap();
-    func.sym = Some( vec[1].clone().unwrap_leaf() );
+    func.sym = Some( vec[1].clone().unwrap_atom() );
 
     Some(func)
 }
 
 fn is_symbol(op: &str, expr: &Expr) -> bool {
     if expr.is_atom() {
-        let expr_op = expr.get_ref_leaf();
+        let expr_op = expr.get_ref_atom();
         op.equiv(expr_op)
     } else {
         false

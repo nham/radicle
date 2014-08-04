@@ -10,14 +10,12 @@ pub use std::collections::HashMap;
 pub use std::vec::MoveItems;
 use std::os;
 
-pub use tree::{Tree, Nil};
-pub use Atom = tree::Leaf;
-pub use List = tree::Branch;
+pub use expr::{Expression, Nil, Atom, List};
 
 use eval::eval;
 use read::read;
 
-pub mod tree;
+pub mod expr;
 pub mod eval;
 pub mod read;
 mod test;
@@ -83,7 +81,7 @@ pub fn read_eval(s: String, env: &mut Env) {
 }
 
 /// The representation of Lisp expressions
-pub type Expr = Tree<String>;
+pub type Expr = Expression<String>;
 
 #[deriving(Clone)]
 pub struct Env {
@@ -97,20 +95,5 @@ impl Env {
 
     fn find_copy(&self, key: &String) -> Option<Expr> {
         self.bindings.find_copy(key)
-    }
-}
-
-/// Wrapping the standard Tree methods for aesthetic reasons, I guess
-impl ::tree::Tree<String> {
-    fn is_atom(&self) -> bool {
-        self.is_leaf()
-    }
-
-    fn is_list(&self) -> bool {
-        self.is_branch()
-    }
-
-    fn is_empty_list(&self) -> bool {
-        self.eq(&List(vec!()))
     }
 }

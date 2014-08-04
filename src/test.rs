@@ -1,20 +1,20 @@
 #![allow(unused_imports)]
 use eval::eval;
-use super::{HashMap, Env, Nil, Atom, List, Tree};
+use super::{HashMap, Env, Atom, List, Expr};
 
-fn make_atom(s: &str) -> Tree<String> {
+fn make_atom(s: &str) -> Expr {
     Atom(s.to_string())
 }
 
-fn make_nil() -> Tree<String> {
+fn make_nil() -> Expr {
     List(vec!())
 }
 
-fn make_2list(i1: Tree<String>, i2: Tree<String>) -> Tree<String> {
+fn make_2list(i1: Expr, i2: Expr) -> Expr {
     List(vec!(i1, i2))
 }
 
-fn quote_expr(e: Tree<String>) -> Tree<String> {
+fn quote_expr(e: Expr) -> Expr {
     make_2list(make_atom("quote"), e)
 }
 
