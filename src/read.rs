@@ -44,29 +44,14 @@ pub fn tokenize(s: &str) -> TokenStream {
 /// Attempts to read an entire expression from the token stream. Detects
 /// mismatched parentheses. Also expands ' <expr> into (quote <expr)
 pub fn read_from(v: &mut TokenStream) -> Result<Expr, &'static str> {
-    fn is_beginning_list_sep(s: &String) -> bool {
-        "(".equiv(s) || "[".equiv(s) || "{".equiv(s)
-    }
-
-    fn is_ending_list_sep(s: &String) -> bool {
-        ")".equiv(s) || "]".equiv(s) || "}".equiv(s)
-    }
-
     let tok = v.next();
     match tok {
         None        => Err("Unexpected end of token stream"),
         Some(s) =>
             if is_beginning_list_sep(&s) {
                 let mut ch = vec!();
-
                 loop {
-                    {
-                        let x = v.peek();
-                        if x.is_some() && is_ending_list_sep( x.unwrap()) {
-                            break;
-                        }
-                    }
-
+                    if is_end(v) { break; }
                     match read_from(v) {
                         Err(e) => { return Err(e); },
                         Ok(expr) => { ch.push(expr); }
@@ -87,4 +72,17 @@ pub fn read_from(v: &mut TokenStream) -> Result<Expr, &'static str> {
                 Ok( Atom(s) )
             }
     }
+}
+
+fn is_end(v: &mut TokenStream) -> bool {
+    let x = v.peek();
+    x.is_some() && is_ending_list_sep(x.unwrap())
+}
+
+fn is_beginning_list_sep(s: &String) -> bool {
+    "(".equiv(s) || "[".equiv(s) || "{".equiv(s)
+}
+
+fn is_ending_list_sep(s: &String) -> bool {
+    ")".equiv(s) || "]".equiv(s) || "}".equiv(s)
 }
