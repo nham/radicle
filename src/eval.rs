@@ -8,11 +8,9 @@ pub fn eval(env: &mut Env, expr: Expr) -> EvalResult {
     match expr {
         Nil => Ok(Nil),
         Atom(ref s) => {
-            let res = env.find_copy(s);
-            if res.is_none() {
-                Err("Symbol not found.")
-            } else {
-                Ok(res.unwrap())
+            match env.find_copy(s) {
+                None => Err("Symbol not found."),
+                Some(expr) => Ok(expr),
             }
         },
         List(vec) => {
@@ -196,11 +194,9 @@ struct FuncLiteral {
 
 
 fn parse_func_literal(expr: &Expr) -> Option<FuncLiteral> {
-    let lambda = parse_lambda_literal(expr);
-    if lambda.is_none() {
-        parse_label_literal(expr)
-    } else {
-        lambda
+    match parse_lambda_literal(expr) {
+        None => parse_label_literal(expr),
+        lambda@Some(_) => lambda
     }
 }
 
@@ -246,11 +242,13 @@ fn parse_label_literal(expr: &Expr) -> Option<FuncLiteral> {
 
     let lit = parse_lambda_literal(&vec[2]);
 
-    if lit.is_none() { return None; }
-    let mut func = lit.unwrap();
-    func.sym = Some( vec[1].clone().unwrap_atom() );
-
-    Some(func)
+    match lit {
+        None => None,
+        Some(mut func) => {
+            func.sym = Some( vec[1].clone().unwrap_atom() );
+            Some(func)
+        }
+    }
 }
 
 fn is_symbol(op: &str, expr: &Expr) -> bool {
@@ -285,20 +283,23 @@ fn eval_func_call(env: &mut Env, vec: Vec<Expr>) -> EvalResult {
     // it. However, if it is not such a literal, we need to eval it
     // to see whether it evaluates to a function literal.
 
-    let mut func_lit = parse_func_literal(&op_expr);
-    if func_lit.is_none() {
-        op_expr = try!( eval(env, op_expr) );
+    let func_lit = match parse_func_literal(&op_expr) {
+        Some(f) => f,
+        None => {
+            op_expr = try!( eval(env, op_expr) );
+            match parse_func_literal(&op_expr) {
+                None => return Err("Unrecognized expression."),
+                Some(f) => f,
+            }
+        },
+    };
 
-        func_lit = parse_func_literal(&op_expr);
-        if func_lit.is_none() {
-            return Err("Unrecognized expression.");
-        }
-    }
-
-    let FuncLiteral{params, body, sym} = func_lit.unwrap();
+    let FuncLiteral{params, body, sym} = func_lit;
     let mut bindings = HashMap::<String, Expr>::new();
-    if sym.is_some() {
-        bindings.insert(sym.unwrap(), op_expr.clone());
+
+    match sym {
+        Some(s) => { bindings.insert(s, op_expr.clone()); },
+        None => {},
     }
 
     if params.len() != num_args {
