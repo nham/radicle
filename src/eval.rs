@@ -127,13 +127,12 @@ fn eval_cons(env: &mut Env, vec: Vec<Expr>) -> EvalResult {
 }
 
 fn eval_cond(env: &mut Env, vec: Vec<Expr>) -> EvalResult {
-    let mut i = 1;
-    while i < vec.len() {
-        if !vec[i].is_list() {
+    for expr in vec.iter().skip(1) {
+        if !expr.is_list() {
             return Err("Invalid argument to `cond`");
         }
 
-        let arg = vec[i].clone();
+        let arg = expr.clone();
         let list = arg.unwrap_list();
 
         if list.len() != 2 {
@@ -146,8 +145,6 @@ fn eval_cond(env: &mut Env, vec: Vec<Expr>) -> EvalResult {
                 return eval(env, list[1].clone() );
             }
         }
-
-        i += 1;
     }
 
     Ok(Nil)
