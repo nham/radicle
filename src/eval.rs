@@ -127,23 +127,21 @@ fn eval_cons(env: &mut Env, vec: Vec<Expr>) -> EvalResult {
 }
 
 fn eval_cond(env: &mut Env, vec: Vec<Expr>) -> EvalResult {
-    for expr in vec.iter().skip(1) {
-        if !expr.is_list() {
-            return Err("Invalid argument to `cond`");
-        }
+    for expr in vec.move_iter().skip(1) {
+        match expr {
+            List(list) => {
+                if list.len() != 2 {
+                    return Err("Invalid argument to `cond`");
+                } else {
+                    let res = eval(env, list[0].clone());
+                    let val = try!(res);
 
-        let arg = expr.clone();
-        let list = arg.unwrap_list();
-
-        if list.len() != 2 {
-            return Err("Invalid argument to `cond`");
-        } else {
-            let res = eval(env, list[0].clone());
-            let val = try!(res);
-
-            if val.eq( &Atom("t".to_string()) ) {
-                return eval(env, list[1].clone() );
-            }
+                    if val.eq( &Atom("t".to_string()) ) {
+                        return eval(env, list[1].clone() );
+                    }
+                }
+            },
+            _ => return Err("Invalid argument to `cond`"),
         }
     }
 
