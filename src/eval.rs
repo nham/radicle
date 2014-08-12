@@ -116,12 +116,12 @@ fn eval_cons(env: &mut Env, vec: Vec<Expr>) -> EvalResult {
         let val1 = try!( eval(env, vec[1].clone()) );
         let val2 = try!( eval(env, vec[2].clone()) );
 
-        if val2.is_list() {
-            let mut list = val2.unwrap_list();
-            list.unshift(val1);
-            Ok( List(list) )
-        } else {
-            Err("`cons`'s second argument must be a list")
+        match val2 {
+            List(mut list) => {
+                list.unshift(val1);
+                Ok( List(list) )
+            },
+            _ => Err("`cons`'s second argument must be a list")
         }
     }
 }
