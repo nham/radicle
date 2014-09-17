@@ -9,6 +9,7 @@ extern crate debug;
 pub use std::collections::HashMap;
 pub use std::vec::MoveItems;
 use std::os;
+use std::io::fs::PathExtensions;
 
 pub use expr::{Expression, Nil, Atom, List};
 
