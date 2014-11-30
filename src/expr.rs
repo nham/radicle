@@ -16,19 +16,19 @@ impl<T: Eq> Expression<T> {
 
 impl<T> Expression<T> {
     pub fn empty_list() -> Expression<T> {
-        List(vec!())
+        Expression::List(vec!())
     }
 
     pub fn is_nil(&self) -> bool {
         match *self {
-            Nil => true,
+            Expression::Nil => true,
             _ => false,
         }
     }
 
     pub fn is_atom(&self) -> bool {
         match *self {
-            Atom(_) => true,
+            Expression::Atom(_) => true,
             _       => false
         }
     }
@@ -39,29 +39,29 @@ impl<T> Expression<T> {
 
     pub fn get_ref_atom<'a>(&'a self) -> &'a T {
         match *self {
-            Atom(ref val) => val,
-            _         => fail!("called Expression::get_ref_atom() on non-Atom"),
+            Expression::Atom(ref val) => val,
+            _         => panic!("called Expression::get_ref_atom() on non-Atom"),
         }
     }
 
     pub fn get_ref_list<'a>(&'a self) -> &'a Vec<Expression<T>> {
         match *self {
-            List(ref val) => val,
-            _         => fail!("called Expression::get_ref_list() on non-List"),
+            Expression::List(ref val) => val,
+            _         => panic!("called Expression::get_ref_list() on non-List"),
         }
     }
 
     pub fn unwrap_atom(self) -> T {
         match self {
-            Atom(val) => val,
-            _         => fail!("called Expression::unwrap_atom() on non-Atom"),
+            Expression::Atom(val) => val,
+            _         => panic!("called Expression::unwrap_atom() on non-Atom"),
         }
     }
 
     pub fn unwrap_list(self) -> Vec<Expression<T>> {
         match self {
-            List(val) => val,
-            _         => fail!("called Expression::unwrap_list() on non-List"),
+            Expression::List(val) => val,
+            _         => panic!("called Expression::unwrap_list() on non-List"),
         }
     }
 
@@ -77,9 +77,9 @@ impl<T: Show> Expression<T> {
 
     fn print_expr(&self) {
         match *self {
-            Nil => {},
-            Atom(ref val) => { print!("{}", *val); },
-            List(ref vec) => {
+            Expression::Nil => {},
+            Expression::Atom(ref val) => { print!("{}", *val); },
+            Expression::List(ref vec) => {
                 print!("(");
                 if vec.len() > 0 {
                     let mut vec_iter = vec.iter();

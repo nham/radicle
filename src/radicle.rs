@@ -4,14 +4,14 @@
 
 #![feature(phase)]
 #[phase(plugin, link)] extern crate log;
-extern crate debug;
 
 pub use std::collections::HashMap;
 pub use std::vec::MoveItems;
 use std::os;
 use std::io::fs::PathExtensions;
 
-pub use expr::{Expression, Nil, Atom, List};
+pub use expr::{Expression};
+pub use expr::Expression::{Nil, Atom, List};
 
 use eval::eval;
 use read::read;
@@ -70,7 +70,7 @@ pub fn read_eval(s: String, env: &mut Env) {
     match read(s.as_slice()) {
         Err(e) => println!("\nParse error: {}", e),
         Ok(parsed) => {
-            for expr in parsed.move_iter() {
+            for expr in parsed.into_iter() {
                 match eval(env, expr) {
                     Ok(Nil) => {},
                     Ok(expr) => expr.print(),
@@ -95,6 +95,6 @@ impl Env {
     }
 
     fn find_copy(&self, key: &String) -> Option<Expr> {
-        self.bindings.find_copy(key)
+        self.bindings.get(key).cloned()
     }
 }
