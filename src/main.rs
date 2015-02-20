@@ -2,16 +2,13 @@
 
 #![crate_name = "radicle"]
 
-#![feature(phase)]
-#[phase(plugin, link)] extern crate log;
-extern crate debug;
-
 pub use std::collections::HashMap;
-pub use std::vec::MoveItems;
+pub use std::vec::IntoIter;
 use std::os;
-use std::io::fs::PathExtensions;
+use std::old_io::fs::PathExtensions;
 
-pub use expr::{Expression, Nil, Atom, List};
+pub use expr::Expression;
+pub use expr::Expression::{Nil, Atom, List};
 
 use eval::eval;
 use read::read;
@@ -33,7 +30,7 @@ fn main() {
 }
 
 pub fn interpret_file(fname: String) {
-    use std::io::File;
+    use std::old_io::File;
     let path = Path::new(fname.clone());
 
     if path.is_file() {
@@ -50,7 +47,7 @@ pub fn interpret_file(fname: String) {
 }
 
 pub fn repl() {
-    use std::io::{BufferedReader, stdin, stdio};
+    use std::old_io::{BufferedReader, stdin, stdio};
 
     let mut env = Env::new();
     let mut stdin = BufferedReader::new(stdin());
@@ -70,7 +67,7 @@ pub fn read_eval(s: String, env: &mut Env) {
     match read(s.as_slice()) {
         Err(e) => println!("\nParse error: {}", e),
         Ok(parsed) => {
-            for expr in parsed.move_iter() {
+            for expr in parsed.into_iter() {
                 match eval(env, expr) {
                     Ok(Nil) => {},
                     Ok(expr) => expr.print(),
@@ -84,7 +81,7 @@ pub fn read_eval(s: String, env: &mut Env) {
 /// The representation of Lisp expressions
 pub type Expr = Expression<String>;
 
-#[deriving(Clone)]
+#[derive(Clone)]
 pub struct Env {
     bindings: HashMap<String, Expr>,
 }

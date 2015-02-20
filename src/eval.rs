@@ -4,7 +4,6 @@ pub type EvalResult = Result<Expr, &'static str>;
 
 /// The heart and soul of Radicle.
 pub fn eval(env: &mut Env, expr: Expr) -> EvalResult {
-    debug!(" :: Entered eval, expr = {:?}\n", expr);
     match expr {
         Nil => Ok(Nil),
         Atom(ref s) => {
@@ -86,7 +85,6 @@ fn eval_first(env: &mut Env, vec: Vec<Expr>) -> EvalResult {
             let list = val.unwrap_list();
             Ok( list[0].clone() )
         } else {
-            debug!("argument is {:?}\n", val);
             Err("`first`'s argument must be a non-empty list")
         }
     }
@@ -100,7 +98,7 @@ fn eval_rest(env: &mut Env, vec: Vec<Expr>) -> EvalResult {
         let val = try!( eval(env, vec[1].clone() ) );
         if val.is_list() && !val.is_empty_list() {
             let mut list = val.unwrap_list();
-            list.shift();
+            list.remove(0);
             Ok( List(list) )
         } else {
             Err("`rest`'s argument must be a non-empty list")
@@ -118,7 +116,7 @@ fn eval_cons(env: &mut Env, vec: Vec<Expr>) -> EvalResult {
 
         match val2 {
             List(mut list) => {
-                list.unshift(val1);
+                list.insert(0, val1);
                 Ok( List(list) )
             },
             _ => Err("`cons`'s second argument must be a list")
@@ -127,7 +125,7 @@ fn eval_cons(env: &mut Env, vec: Vec<Expr>) -> EvalResult {
 }
 
 fn eval_cond(env: &mut Env, vec: Vec<Expr>) -> EvalResult {
-    for expr in vec.move_iter().skip(1) {
+    for expr in vec.into_iter().skip(1) {
         match expr {
             List(list) => {
                 if list.len() != 2 {
@@ -258,7 +256,7 @@ fn is_symbol(op: &str, expr: &Expr) -> bool {
 fn eval_func_call(env: &mut Env, vec: Vec<Expr>) -> EvalResult {
     let num_args = vec.len() - 1;
 
-    let mut vec_iter = vec.move_iter();
+    let mut vec_iter = vec.into_iter();
     let mut op_expr = vec_iter.next().unwrap();
 
     // There are two kinds of function calls: lambda calls and label
@@ -301,21 +299,19 @@ fn eval_func_call(env: &mut Env, vec: Vec<Expr>) -> EvalResult {
         return Err("mismatch between number of procedure args and number of args called with.");
     }
 
-    let mut param_iter = params.move_iter();
+    let mut param_iter = params.into_iter();
 
     for arg in vec_iter {
         let next_param: String  = param_iter.next().unwrap();
-        debug!("  - eval of {:?} --> {}\n", arg, next_param);
         bindings.insert(next_param, 
                         try!( eval(env, arg) ));
     }
 
     let mut new_env = env.clone();
-    for (k, v) in bindings.move_iter() {
+    for (k, v) in bindings.into_iter() {
         new_env.bindings.insert(k, v);
     }
 
-    debug!(" :: arguments have been passed into environment, evaling lambda body\n");
     let val = try!( eval(&mut new_env, body) );
     Ok(val)
 }
