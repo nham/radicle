@@ -92,6 +92,6 @@ impl Env {
     }
 
     fn find_copy(&self, key: &String) -> Option<Expr> {
-        self.bindings.find_copy(key)
+        self.bindings.get(key).cloned()
     }
 }
