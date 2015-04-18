@@ -28,7 +28,7 @@ pub fn tokenize(s: &str) -> TokenStream {
     s1 = s1.replace("{", " { ").replace("}", " } ");
     s1 = s1.replace("'", " ' ");
 
-    let x: Vec<&str> = s1.as_slice().split(|c: char| c.is_whitespace()).collect();
+    let x: Vec<&str> = s1.as_ref().split(|c: char| c.is_whitespace()).collect();
 
     let mut ret: Vec<String> = vec!();
     for &e in x.iter() {
@@ -62,7 +62,7 @@ pub fn read_from(v: &mut TokenStream) -> Result<Expr, &'static str> {
 
             } else if is_ending_list_sep(&s) {
                 Err("Unexpected list end token")
-            } else if "'".equiv(&s) {
+            } else if "'" == s {
                 match read_from(v) {
                     Err(e) => Err(e),
                     Ok(expr) => Ok( List( vec!(Atom("quote".to_string()), expr)) ),
@@ -79,9 +79,9 @@ fn is_end(v: &mut TokenStream) -> bool {
 }
 
 fn is_beginning_list_sep(s: &String) -> bool {
-    "(".equiv(s) || "[".equiv(s) || "{".equiv(s)
+    "(" == s || "[" == s || "{" == s
 }
 
 fn is_ending_list_sep(s: &String) -> bool {
-    ")".equiv(s) || "]".equiv(s) || "}".equiv(s)
+    ")" == s || "]" == s || "}" == s
 }

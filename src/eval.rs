@@ -247,7 +247,7 @@ fn parse_label_literal(expr: &Expr) -> Option<FuncLiteral> {
 fn is_symbol(op: &str, expr: &Expr) -> bool {
     if expr.is_atom() {
         let expr_op = expr.get_ref_atom();
-        op.equiv(expr_op)
+        op == expr_op
     } else {
         false
     }

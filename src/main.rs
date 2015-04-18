@@ -4,8 +4,10 @@
 
 pub use std::collections::HashMap;
 pub use std::vec::IntoIter;
-use std::os;
-use std::old_io::fs::PathExtensions;
+use std::env;
+use std::fs::{File, PathExt};
+use std::path::Path;
+use std::io::{stdin, stdout, BufReader, Write, Read};
 
 pub use expr::Expression;
 pub use expr::Expression::{Nil, Atom, List};
@@ -19,22 +21,25 @@ pub mod read;
 mod test;
 
 fn main() {
-    let args = os::args();
+    let args = env::args();
     if args.len() == 1 {
         repl();
     } else if args.len() > 2 {
         println!("radicle: Only one argument allowed.");
     } else {
-        interpret_file(args[1].clone());
+        args.next();
+        interpret_file(args.next().unwrap().clone());
     }
 }
 
 pub fn interpret_file(fname: String) {
-    use std::old_io::File;
-    let path = Path::new(fname.clone());
+    let path = Path::new(&fname);
 
     if path.is_file() {
-        let mut hw_file = File::open(&path);
+        let mut hw_file = match File::open(&path) {
+
+        };
+
         match hw_file.read_to_string() {
             Err(e) => println!("{}", e),
             Ok(s) => {
@@ -47,24 +52,23 @@ pub fn interpret_file(fname: String) {
 }
 
 pub fn repl() {
-    use std::old_io::{BufferedReader, stdin, stdio};
-
     let mut env = Env::new();
-    let mut stdin = BufferedReader::new(stdin());
+    let mut stdin = BufReader::new(stdin());
+    let mut stdout = stdout();
     print!("repl> ");
-    stdio::flush();
+    stdout.flush();
     for line in stdin.lines() {
         read_eval(line.unwrap(), &mut env);
 
         print!("repl> ");
-        stdio::flush();
+        stdout.flush();
     }
 
 }
 
 /// A convenience function that calls read & eval and displays their results
 pub fn read_eval(s: String, env: &mut Env) {
-    match read(s.as_slice()) {
+    match read(s.as_ref()) {
         Err(e) => println!("\nParse error: {}", e),
         Ok(parsed) => {
             for expr in parsed.into_iter() {
