@@ -5,9 +5,9 @@
 pub use std::collections::HashMap;
 pub use std::vec::IntoIter;
 use std::env;
-use std::fs::{File, PathExt};
+use std::fs::File;
 use std::path::Path;
-use std::io::{stdin, stdout, BufReader, Write, Read};
+use std::io::{stdin, stdout, BufRead, BufReader, Write, Read};
 
 pub use expr::Expression;
 pub use expr::Expression::{Nil, Atom, List};
@@ -21,7 +21,7 @@ pub mod read;
 mod test;
 
 fn main() {
-    let args = env::args();
+    let mut args = env::args();
     if args.len() == 1 {
         repl();
     } else if args.len() > 2 {
@@ -36,14 +36,13 @@ pub fn interpret_file(fname: String) {
     let path = Path::new(&fname);
 
     if path.is_file() {
-        let mut hw_file = match File::open(&path) {
+        let mut hw_file = File::open(&path).expect("Couldn't open file to interpret it.");
 
-        };
-
-        match hw_file.read_to_string() {
+        let mut program_text = String::new();
+        match hw_file.read_to_string(&mut program_text) {
             Err(e) => println!("{}", e),
-            Ok(s) => {
-                read_eval(s, &mut Env::new());
+            Ok(_) => {
+                read_eval(program_text, &mut Env::new());
             }
         }
     } else {

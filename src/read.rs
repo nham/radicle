@@ -11,7 +11,7 @@ pub fn read(s: &str) -> Result<Vec<Expr>, &'static str> {
     let mut stream = tokenize(s);
     let mut res = vec!();
 
-    while !stream.is_empty() {
+    while !stream.peek().is_none() {
         match read_from(&mut stream) {
             Err(e) => return Err(e),
             Ok(x) => res.push(x),
@@ -28,7 +28,7 @@ pub fn tokenize(s: &str) -> TokenStream {
     s1 = s1.replace("{", " { ").replace("}", " } ");
     s1 = s1.replace("'", " ' ");
 
-    let x: Vec<&str> = s1.as_ref().split(|c: char| c.is_whitespace()).collect();
+    let x: Vec<&str> = (&s1).split(|c: char| c.is_whitespace()).collect();
 
     let mut ret: Vec<String> = vec!();
     for &e in x.iter() {
